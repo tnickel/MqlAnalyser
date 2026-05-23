@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <install4j version="8.0.11" transformSequenceNumber="8">
-  <directoryPresets config="D:/git/Monitortool/workspace_monitortool2019/MqlAnalyser/Setup/pictures" />
-  <application name="MqlAnalyser" applicationId="0328-3250-6084-3097" mediaDir="//ds918/Forex/tmp" compression="1" pack200Compression="true" shortName="MqlAnalyser" publisher="Thomas Nickel" publisherWeb="https://monitortool.jimdofree.com/" version="0.4.12" autoSave="true" macVolumeId="b47bb94d2307a995" javaMinVersion="17" javaMaxVersion="21" />
+  <directoryPresets config="D:/git/MQL/MqlAnalyser/Setup/pictures" />
+  <application name="MqlAnalyser" applicationId="0328-3250-6084-3097" mediaDir="//ds918/Forex/tmp" compression="1" shortName="MqlAnalyser" publisher="Thomas Nickel" publisherWeb="https://monitortool.jimdofree.com/" version="0.4.12" autoSave="true" macVolumeId="b47bb94d2307a995" javaMinVersion="17" javaMaxVersion="21" />
   <files>
     <mountPoints>
       <mountPoint id="115" />
     </mountPoints>
     <entries>
-      <dirEntry mountPoint="115" file="D:/git/Monitortool/workspace_monitortool2019/MqlAnalyser/install" subDirectory="install" />
+      <dirEntry mountPoint="115" file="D:/git/MQL/MqlAnalyser/install" subDirectory="install" />
     </entries>
   </files>
   <installerGui>
@@ -54,7 +54,7 @@
                     <property name="imageEdgeBorder" type="boolean" value="true" />
                     <property name="imageFile">
                       <object class="com.install4j.api.beans.ExternalFile">
-                        <string>D:/git/Monitortool/workspace_monitortool2019/MqlAnalyser/Setup/pictures/MqlAnalyzerStartup.PNG</string>
+                        <string>D:/git/MQL/MqlAnalyser/Setup/pictures/MqlAnalyzerStartup.PNG</string>
                       </object>
                     </property>
                     <property name="insets">
@@ -296,11 +296,7 @@ return console.askYesNo(message, true);
           </formComponent>
           <group name="Main" id="37" beanClass="com.install4j.runtime.beans.groups.VerticalFormComponentGroup">
             <serializedBean>
-              <property name="imageFile">
-                <object class="com.install4j.api.beans.ExternalFile">
-                  <string>D:/git/Monitortool/Toolbox/setup/install4j/pictures/toolbox.PNG</string>
-                </object>
-              </property>
+              <property name="makeSameWidth" type="boolean" value="true" />
             </serializedBean>
             <beans>
               <formComponent id="38" beanClass="com.install4j.runtime.beans.styles.ContentComponent" insetTop="10" insetLeft="20" insetBottom="10" insetRight="20" />
@@ -506,7 +502,7 @@ return console.askYesNo(message, true);
   </installerGui>
   <mediaSets>
     <windows name="Windows" id="58">
-      <jreBundle usePack200="false" jreBundleSource="preCreated" includedJre="windows-amd64-17.0.8" />
+      <jreBundle usePack200="false" jreBundleSource="preCreated" includedJre="windows-amd64-21.0.8" />
     </windows>
   </mediaSets>
 </install4j>
