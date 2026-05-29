@@ -1,0 +1,14 @@
+/target/
+/.settings/
+/.classpath
+/.project
+/install/bin/
+/install/database/
+/install/download/
+/install/javafx-sdk/
+/install/jdk-17/
+/install/jre/
+/install/tools/
+/install/Realtick/
+/*.ser
+/install/config/favorites.txt.backup*

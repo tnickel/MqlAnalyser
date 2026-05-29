@@ -204,18 +204,23 @@ public class TableRefreshManager {
      * Richtet die Spalten-Renderer ein
      */
     private void setupColumnRenderers() {
+        NumberFormatRenderer numberRenderer = new NumberFormatRenderer(renderer);
+        renderers.RisikoRenderer risikoRenderer = new renderers.RisikoRenderer(renderer);
+        
         for (int i = 0; i < mainTable.getColumnCount(); i++) {
-            // Risk Score Spalte (Spalte 20) verwendet den speziellen RiskScoreRenderer
-            if (i == 20) {
+            String columnName = mainTable.getColumnName(i);
+            
+            if ("Risiko".equals(columnName)) {
+                mainTable.getColumnModel().getColumn(i).setCellRenderer(risikoRenderer);
+            }
+            else if ("Risk Score".equals(columnName)) {
                 mainTable.getColumnModel().getColumn(i).setCellRenderer(riskRenderer);
             }
-            // Spalte 0 (No) und 1 (Signal Provider) verwenden den Standard-Renderer
-            else if (i == 0 || i == 1) {
+            else if ("No.".equals(columnName) || "Signal Provider".equals(columnName)) {
                 mainTable.getColumnModel().getColumn(i).setCellRenderer(renderer);
             }
-            // Alle anderen Spalten sind numerisch und verwenden den NumberFormatRenderer
             else {
-                mainTable.getColumnModel().getColumn(i).setCellRenderer(new NumberFormatRenderer(renderer));
+                mainTable.getColumnModel().getColumn(i).setCellRenderer(numberRenderer);
             }
         }
     }

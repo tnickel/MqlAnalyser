@@ -1,0 +1,68 @@
+# ID-zu-Provider-Name Translation
+# Format: signalId:providerName
+# Generiert von MqlRealMonitor
+#
+1067812:Night Hunter Pro MT5 Extreme
+1862520:AUDCAD Conservative
+2185071:Hydrogen Investor
+2196869:AUDCAD Aggressive
+2237967:MasterPipmaker
+2247221:WIDIMAX
+2257694:Richly Invest
+2270168:BreakThrustPro V2
+2270597:Crazy Trend Alfa Forex
+2272199:Quantum Bitcoin EA
+2281168:GOLD Super Trader
+2281312:MT5 SNP
+2282589:CTZ LowRisk
+2283124:SynerTrend
+2285398:Breakout GOLD
+2286476:Traderbrothersid
+2289146:NFX 2
+2290367:THPX1
+2293863:GoldTrade
+2293931:BreakoutPulse
+2294070:Omni Gold
+2294111:Smart trading 3
+2298255:Red Hat
+2300008:Smart trading
+2301210:EA Happy Breakout TMGM
+2302180:BOT CONSERVADOR TAKE STOP GOLD
+2302876:Trading Automatico
+2302960:HanKim2
+2303269:Jupiter3 Trades
+2303671:Stable 2025
+2303746:Breakout System 1
+2304444:QiwiX SL30
+2304559:HQinvestment
+2304764:Swing Master Incubator
+2304847:MSC SuperGold Pro
+2304986:EA TrendX Scalper BIG
+2306566:King snip icm
+2306626:Simple 200 EUR
+2306910:Goal 10 percent per month
+2307157:Gold Trend01
+2307209:Trader Family
+2307385:Euro TP
+2307521:Simple Simple
+2307938:Gold Manual Signal
+2308448:Burning Grid Low Risk
+2308452:Burning Grid Medium Risk
+2308669:MyBoring
+2309665:ETH Trade
+2309704:Triple Trend Fund
+2310055:SkyLine GTR
+2310299:FoxTrading Ai System
+2310685:Gold II
+2311403:D3luxe1 LowRisk
+2311475:HANNAH BTC V6
+2311479:EA TITAN BREAKER
+2312204:Goldfinger AN
+2312737:Queenofpain
+2313241:Haha
+2314238:Titan Gravity Indicator
+2314548:GoGo Min 100
+2314822:Allevia EA
+2316491:EA_GOLD_SONCH09
+2317587:LJP119
+2318071:The magic Ea Low Risk

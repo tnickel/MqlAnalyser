@@ -18,7 +18,7 @@ import utils.HtmlDatabase;
 public class HighlightTableModel extends DefaultTableModel {
   
 	private static final String[] COLUMN_NAMES = {
-		    "No.", "Signal Provider", "Balance", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
+		    "No.", "Signal Provider", "Balance", "Subscribers", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
 		    "3MProfProz", "Trades", "Trade Days", "Days", "Win Rate %", "Total Profit", 
 		    "Avg Profit/Trade", "Max Drawdown %", "Equity Drawdown %", "Profit Factor", 
 		    "MaxTrades", "MaxLots", "Max Duration (h)", "Risiko", "Risk Score", "S/L", "T/P", 
@@ -50,32 +50,33 @@ public class HighlightTableModel extends DefaultTableModel {
   public Class<?> getColumnClass(int columnIndex) {
       switch (columnIndex) {
           case 0:  // No
-          case 8:  // Trades
-          case 9:  // Trade Days
-          case 10: // Days
-          case 17: // MaxTrades
-          case 19: // Max Duration
-          case 21: // Risk Score
-          case 22: // S/L
-          case 23: // T/P
+          case 3:  // Subscribers
+          case 9:  // Trades
+          case 10: // Trade Days
+          case 11: // Days
+          case 18: // MaxTrades
+          case 20: // Max Duration
+          case 22: // Risk Score
+          case 23: // S/L
+          case 24: // T/P
               return Integer.class;
           case 2:  // Balance
-          case 3:  // 3MPDD
-          case 4:  // 6MPDD
-          case 5:  // 9MPDD
-          case 6:  // 12MPDD
-          case 7:  // 3MProfProz
-          case 11: // Win Rate
-          case 12: // Total Profit
-          case 13: // Avg Profit/Trade
-          case 14: // Max Drawdown
-          case 15: // Equity Drawdown
-          case 16: // Profit Factor
-          case 18: // MaxLots
-          case 26: // Stabilität
-          case 27: // Steigung
-          case 28: // MaxDDGraphic
-          case 29: // EquityDrawdown3M%
+          case 4:  // 3MPDD
+          case 5:  // 6MPDD
+          case 6:  // 9MPDD
+          case 7:  // 12MPDD
+          case 8:  // 3MProfProz
+          case 12: // Win Rate
+          case 13: // Total Profit
+          case 14: // Avg Profit/Trade
+          case 15: // Max Drawdown
+          case 16: // Equity Drawdown
+          case 17: // Profit Factor
+          case 19: // MaxLots
+          case 27: // Stabilität
+          case 28: // Steigung
+          case 29: // MaxDDGraphic
+          case 30: // EquityDrawdown3M%
               return Double.class;
           default:
               return String.class;
@@ -178,8 +179,9 @@ public class HighlightTableModel extends DefaultTableModel {
 	        String providerName = entry.getKey();
 	        ProviderStats stats = entry.getValue();
 	        
-	        double equityDrawdown = htmlDatabase.getEquityDrawdown(providerName);
+		        double equityDrawdown = htmlDatabase.getEquityDrawdown(providerName);
 	        double balance = htmlDatabase.getBalance(providerName);
+	        int subscribers = htmlDatabase.getSubscribers(providerName);
 	        double maxDDGraphic = htmlDatabase.getEquityDrawdownGraphic(providerName);
             double equityDrawdown3M = htmlDatabase.getMaxDrawdown3M(providerName); // Neue Spalte
 	        
@@ -226,13 +228,14 @@ public class HighlightTableModel extends DefaultTableModel {
 	                }
 	            }
 	        }
-
+	        
 	        long daysBetween = calculateDaysBetween(stats);
 	        
 	        addRow(new Object[]{
 	            rowNum++, 
 	            providerName, 
 	            balance,
+	            subscribers,
 	            mpdd3,
 	            mpdd6,
 	            mpdd9,
@@ -268,6 +271,7 @@ public class HighlightTableModel extends DefaultTableModel {
   public Object[] createRowDataForProvider(String providerName, ProviderStats stats) {
 	    double equityDrawdown = htmlDatabase.getEquityDrawdown(providerName);
 	    double balance = htmlDatabase.getBalance(providerName);
+	    int subscribers = htmlDatabase.getSubscribers(providerName);
 	    double maxDDGraphic = htmlDatabase.getEquityDrawdownGraphic(providerName);
         double equityDrawdown3M = htmlDatabase.getMaxDrawdown3M(providerName); // Neue Spalte
 	    
@@ -311,13 +315,14 @@ public class HighlightTableModel extends DefaultTableModel {
 	            }
 	        }
 	    }
-
+	    
 	    long daysBetween = calculateDaysBetween(stats);
 	    
 	    return new Object[]{
 	        0, // Platzhalter für die Nummer
 	        providerName,
 	        balance,
+	        subscribers,
 	        mpdd3,
 	        mpdd6,
 	        mpdd9,

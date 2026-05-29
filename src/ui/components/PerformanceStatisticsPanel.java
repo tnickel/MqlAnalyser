@@ -472,6 +472,7 @@ public class PerformanceStatisticsPanel extends JPanel {
         
         JButton showTradesButton = UIStyle.createStyledButton("Show Trade List");
         JButton showDbInfoButton = UIStyle.createStyledButton("Show DB Info");
+        JButton ddAnalyzerButton = UIStyle.createStyledButton("Drawdown Analyse");
         
         showTradesButton.addActionListener(e -> {
             TradeListFrame tradeListFrame = new TradeListFrame(providerName, stats);
@@ -485,9 +486,14 @@ public class PerformanceStatisticsPanel extends JPanel {
             dialog.setVisible(true);
         });
         
+        ddAnalyzerButton.addActionListener(e -> {
+            openDrawdownAnalyzer(providerId, providerName);
+        });
+        
         actionButtonsPanel.add(badProviderButton);
         actionButtonsPanel.add(showTradesButton);
         actionButtonsPanel.add(showDbInfoButton);
+        actionButtonsPanel.add(ddAnalyzerButton);
         
         // Gesamtes Button-Panel
         buttonPanel.add(favoritePanel, BorderLayout.WEST);
@@ -701,5 +707,181 @@ public class PerformanceStatisticsPanel extends JPanel {
         if (riskCategoryComboBox != null) {
             riskCategoryComboBox.setSelectedIndex(riskCategory);
         }
+    }
+
+    private File ensureDrawdownFilesExist(String filename) {
+        File targetFile = new File(rootPath, "docu/drawdown/" + filename);
+
+        // Try to find the source file in different locations
+        List<File> sourceLocations = new ArrayList<>();
+        sourceLocations.add(new File("docu/drawdown/" + filename));
+        sourceLocations.add(new File("../docu/drawdown/" + filename));
+        sourceLocations.add(new File("../../docu/drawdown/" + filename));
+        sourceLocations.add(new File("d:/git/MQL/MqlAnalyser/docu/drawdown/" + filename));
+
+        // Also try relative to the JAR location
+        try {
+            java.net.URL codeSourceUrl = PerformanceStatisticsPanel.class.getProtectionDomain().getCodeSource().getLocation();
+            if (codeSourceUrl != null) {
+                File jarFile = new File(codeSourceUrl.toURI());
+                File jarDir = jarFile.isDirectory() ? jarFile : jarFile.getParentFile();
+                if (jarDir != null) {
+                    sourceLocations.add(new File(jarDir, "docu/drawdown/" + filename));
+                    if (jarDir.getParentFile() != null) {
+                        sourceLocations.add(new File(jarDir.getParentFile(), "docu/drawdown/" + filename));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+
+        // Find the first existing source file
+        File foundSource = null;
+        for (File src : sourceLocations) {
+            if (src.exists()) {
+                foundSource = src;
+                break;
+            }
+        }
+
+        if (foundSource != null) {
+            try {
+                // Ensure target directory exists
+                File targetDir = targetFile.getParentFile();
+                if (targetDir != null && !targetDir.exists()) {
+                    targetDir.mkdirs();
+                }
+                
+                // Copy if target doesn't exist or source is newer
+                if (!targetFile.exists() || foundSource.lastModified() > targetFile.lastModified()) {
+                    try (java.nio.channels.FileChannel sourceChannel = new java.io.FileInputStream(foundSource).getChannel();
+                         java.nio.channels.FileChannel destChannel = new java.io.FileOutputStream(targetFile).getChannel()) {
+                        destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+                    }
+                    System.out.println("Drawdown file copied/updated: " + targetFile.getAbsolutePath());
+                }
+                
+                // Also copy the Vue JS file if it doesn't exist yet or is newer
+                File vueTarget = new File(targetDir, "vue.global.prod.js");
+                File vueSource = new File(foundSource.getParentFile(), "vue.global.prod.js");
+                if (vueSource.exists() && (!vueTarget.exists() || vueSource.lastModified() > vueTarget.lastModified())) {
+                    try (java.nio.channels.FileChannel sourceChannel = new java.io.FileInputStream(vueSource).getChannel();
+                         java.nio.channels.FileChannel destChannel = new java.io.FileOutputStream(vueTarget).getChannel()) {
+                        destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+                    }
+                }
+                
+                return targetFile;
+            } catch (Exception e) {
+                System.err.println("Error copying drawdown file: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        return targetFile;
+    }
+
+    private void openDrawdownAnalyzer(String providerId, String providerName) {
+        try {
+            // Ensure HTML file and Vue assets exist in target folder
+            File htmlFile = ensureDrawdownFilesExist("index.html");
+            if (!htmlFile.exists()) {
+                JOptionPane.showMessageDialog(this,
+                    "Drawdown Analyzer HTML-Datei konnte nicht gefunden werden unter:\n" + htmlFile.getAbsolutePath(),
+                    "Fehler",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Generate data.js
+            String strategyJson = String.format("{\n  \"strategyName\": \"%s\",\n  \"projectName\": \"MqlAnalyser\"\n}", escapeJson(providerName));
+            
+            StringBuilder ordersJson = new StringBuilder();
+            ordersJson.append("[\n");
+            
+            List<data.Trade> allEvents = new ArrayList<>();
+            allEvents.addAll(stats.getTrades());
+            allEvents.addAll(stats.getBalanceTransactions());
+            allEvents.sort(java.util.Comparator.comparing(data.Trade::getCloseTime));
+            
+            double balance = 0.0;
+            if (stats.getBalanceTransactions().isEmpty()) {
+                balance = stats.getInitialBalance();
+                if (balance <= 0) {
+                    balance = 10000.0;
+                }
+            }
+            
+            for (int i = 0; i < allEvents.size(); i++) {
+                data.Trade trade = allEvents.get(i);
+                double profit = trade.getProfit();
+                balance += profit;
+                
+                long closeTimeMs = trade.getCloseTime().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+                
+                int typeVal = 0;
+                if ("Sell".equalsIgnoreCase(trade.getType())) {
+                    typeVal = 1;
+                } else if ("Balance".equalsIgnoreCase(trade.getType()) || "Credit".equalsIgnoreCase(trade.getType())) {
+                    typeVal = 9;
+                }
+                
+                if (i > 0) {
+                    ordersJson.append(",\n");
+                }
+                ordersJson.append(String.format(java.util.Locale.US, 
+                    "  { \"Type\": %d, \"CloseTime\": %d, \"ProfitLoss\": %.2f, \"Balance\": %.2f }", 
+                    typeVal, closeTimeMs, profit, balance));
+            }
+            ordersJson.append("\n]");
+            
+            String dataJsContent = String.format("window.strategyData = %s;\nwindow.ordersData = %s;\n", 
+                                                 strategyJson, ordersJson.toString());
+            
+            // Write to data.js
+            File dataJsFile = new File(htmlFile.getParentFile(), "data.js");
+            try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.BufferedWriter(new java.io.OutputStreamWriter(
+                    new java.io.FileOutputStream(dataJsFile), java.nio.charset.StandardCharsets.UTF_8)))) {
+                writer.print(dataJsContent);
+            }
+            
+            String strategyParam = "?strategy=" + java.net.URLEncoder.encode(providerName, "UTF-8").replace("+", "%20");
+            java.net.URI uri = new java.net.URI(htmlFile.toURI().toString() + strategyParam);
+            
+            // Open in browser
+            if (java.awt.Desktop.isDesktopSupported()) {
+                java.awt.Desktop.getDesktop().browse(uri);
+            } else {
+                String os = System.getProperty("os.name").toLowerCase();
+                ProcessBuilder processBuilder;
+                String url = uri.toString();
+                if (os.contains("win")) {
+                    processBuilder = new ProcessBuilder("rundll32", "url.dll,FileProtocolHandler", url);
+                } else if (os.contains("mac")) {
+                    processBuilder = new ProcessBuilder("open", url);
+                } else {
+                    processBuilder = new ProcessBuilder("xdg-open", url);
+                }
+                processBuilder.start();
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                "Drawdown Analyzer konnte nicht gestartet werden:\n" + e.getMessage(),
+                "Fehler",
+                JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\b", "\\b")
+                .replace("\f", "\\f")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 }

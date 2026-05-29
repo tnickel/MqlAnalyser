@@ -35,7 +35,7 @@ public class FilterDialog extends JDialog {
     };
     
     private static final String[] TABLE_COLUMNS = {
-    	    "No.", "Signal Provider", "Balance", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
+    	    "No.", "Signal Provider", "Balance", "Subscribers", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
     	    "3MProfProz", "Trades", "Trade Days", "Days", "Win Rate %", "Total Profit", 
     	    "Avg Profit/Trade", "Max Drawdown %", "Equity Drawdown %", 
     	    "Profit Factor", "MaxTrades", "MaxLots", "Max Duration (h)", "Risiko",
@@ -70,7 +70,8 @@ public class FilterDialog extends JDialog {
                     String strValue = value.toString().trim();
                     
                     // Für Text-Spalten (Signal Provider, Start Date, End Date)
-                    if (row == 1 || row == 24 || row == 25) {
+                    String columnNameText = getValueAt(row, 0).toString();
+                    if ("Signal Provider".equals(columnNameText) || "Start Date".equals(columnNameText) || "End Date".equals(columnNameText)) {
                         super.setValueAt(strValue, row, col);
                         return;
                     }
@@ -134,7 +135,7 @@ public class FilterDialog extends JDialog {
                         int row = filterTable.getEditingRow();
                         String rowName = (String) filterTable.getValueAt(row, 0);
                         
-                        if (!(row == 1 || row == 24 || row == 25)) {  // Nicht für Text-Spalten
+                        if (!("Signal Provider".equals(rowName) || "Start Date".equals(rowName) || "End Date".equals(rowName))) {  // Nicht für Text-Spalten
                             Double.parseDouble(value);
                         }
                     }
@@ -338,7 +339,7 @@ public class FilterDialog extends JDialog {
             if (columnId == -1) continue;
             
             // Textfilter für Signal Provider, Start Date und End Date
-            if (columnId == 1 || columnId == 24 || columnId == 25) {
+            if ("Signal Provider".equals(columnName) || "Start Date".equals(columnName) || "End Date".equals(columnName)) {
                 if (!minStr.isEmpty()) {
                     criteria.addFilter(columnId, new FilterRange(minStr));
                     hasAnyFilter = true;

@@ -53,6 +53,10 @@ public class HtmlDatabase {
         return basicDataProvider.getEquityDrawdownGraphic(fileName);
     }
     
+    public int getSubscribers(String fileName) {
+        return basicDataProvider.getSubscribers(fileName);
+    }
+    
     // ========== Delegation an DrawdownAnalyzer ==========
     
     public double getMaxDrawdown3M(String fileName) {

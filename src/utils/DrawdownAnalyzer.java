@@ -43,12 +43,12 @@ public class DrawdownAnalyzer {
         }
         
         // Debug-Ausgabe
-        System.out.println("===== Analysiere Drawdown-Daten für " + fileName + " =====");
-        System.out.println("Zeitraum: von " + threeMonthsAgo + " bis " + currentDate);
-        System.out.println("Gefundene Zeilen: " + lines.length);
+        // System.out.println("===== Analysiere Drawdown-Daten für " + fileName + " =====");
+        // System.out.println("Zeitraum: von " + threeMonthsAgo + " bis " + currentDate);
+        // System.out.println("Gefundene Zeilen: " + lines.length);
         
         // Für Debugging: Alle Drawdown-Werte ausgeben, die größer als 10% sind
-        System.out.println("Signifikante Drawdown-Werte (>10%):");
+        // System.out.println("Signifikante Drawdown-Werte (>10%):");
         
         int relevantDataCount = 0;
         
@@ -75,9 +75,9 @@ public class DrawdownAnalyzer {
                     double drawdown = Double.parseDouble(valueStr);
                     
                     // Für Debug: Signifikante Werte ausgeben
-                    if (drawdown > 10.0) {
-                        System.out.println(dateStr + ": " + drawdown + "%");
-                    }
+                    // if (drawdown > 10.0) {
+                    //     System.out.println(dateStr + ": " + drawdown + "%");
+                    // }
                     
                     // Maximum aktualisieren
                     if (drawdown > maxDrawdown) {
@@ -90,10 +90,10 @@ public class DrawdownAnalyzer {
             }
         }
         
-        System.out.println("Relevante Datenpunkte in den letzten 3 Monaten: " + relevantDataCount);
-        System.out.println("Maximaler 3-Monats-Drawdown: " + maxDrawdown + "%" + 
-                          (maxDrawdownDate != null ? " (am " + maxDrawdownDate + ")" : ""));
-        System.out.println("============================================");
+        // System.out.println("Relevante Datenpunkte in den letzten 3 Monaten: " + relevantDataCount);
+        // System.out.println("Maximaler 3-Monats-Drawdown: " + maxDrawdown + "%" + 
+        //                   (maxDrawdownDate != null ? " (am " + maxDrawdownDate + ")" : ""));
+        // System.out.println("============================================");
         
         // Speichere den maximalen 3-Monats-Drawdown in der Datenbank
         fileDataReader.updateCacheData(fileName, "MaxDrawdown3M", String.format("%.2f", maxDrawdown).replace(',', '.'));

@@ -1,17 +1,17 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+﻿<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 <modelVersion>4.0.0</modelVersion>
 
 <groupId>com.mqlanalyser</groupId>
 <artifactId>MqlAnalyser</artifactId>
-<version>1.0.0</version>
+<version>1.0.1</version>
 
 <properties>
-<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
+<project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 <maven.compiler.source>11</maven.compiler.source>
 <maven.compiler.target>11</maven.compiler.target>
-<file.encoding>UTF-8</file.encoding>
+<file.encoding>ISO-8859-1</file.encoding>
 </properties>
 
 <build>
@@ -29,11 +29,11 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 <configuration>
 <source>11</source>
 <target>11</target>
-<encoding>UTF-8</encoding>
+<encoding>ISO-8859-1</encoding>
 <compilerArgs>
 <arg>-Xlint:none</arg>
 <arg>-encoding</arg>
-<arg>UTF-8</arg>
+<arg>ISO-8859-1</arg>
 </compilerArgs>
 </configuration>
 </plugin>
@@ -42,7 +42,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 <artifactId>maven-resources-plugin</artifactId>
 <version>3.2.0</version>
 <configuration>
-<encoding>UTF-8</encoding>
+<encoding>ISO-8859-1</encoding>
 </configuration>
 </plugin>
 <plugin>
@@ -56,6 +56,31 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 <option>javafx.graphics/com.sun.javafx.util=ALL-UNNAMED</option>
 </options>
 </configuration>
+</plugin>
+<plugin>
+<artifactId>maven-assembly-plugin</artifactId>
+<version>3.3.0</version>
+<configuration>
+<finalName>MqlAnalyzer</finalName>
+<appendAssemblyId>false</appendAssemblyId>
+<descriptorRefs>
+<descriptorRef>jar-with-dependencies</descriptorRef>
+</descriptorRefs>
+<archive>
+<manifest>
+<mainClass>SignalProviderTable</mainClass>
+</manifest>
+</archive>
+</configuration>
+<executions>
+<execution>
+<id>make-assembly</id>
+<phase>package</phase>
+<goals>
+<goal>single</goal>
+</goals>
+</execution>
+</executions>
 </plugin>
 </plugins>
 </build>
@@ -123,6 +148,11 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     <groupId>org.apache.pdfbox</groupId>
     <artifactId>pdfbox</artifactId>
     <version>2.0.29</version>
+</dependency>
+<dependency>
+    <groupId>org.jsoup</groupId>
+    <artifactId>jsoup</artifactId>
+    <version>1.15.3</version>
 </dependency>
 </dependencies>
 </project>

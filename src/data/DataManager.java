@@ -32,7 +32,7 @@ public class DataManager {
    private static DataManager instance;
    
    // Debug-Modus für zusätzliche Ausgaben
-   private boolean debugMode = true;
+   private boolean debugMode = false;
    
    public DataManager() {
        this.signalProviderStats = new HashMap<>();
@@ -217,36 +217,46 @@ public class DataManager {
                        skippedLines.add(line);
                        continue;
                    }
-                   
-                   // Balance und Credit Einträge im Standard-Format
-                   if (!isMql5Format && (line.startsWith("Balance") || line.startsWith("Credit"))) {
-                       if (data.length > 1 && "Balance".equalsIgnoreCase(data[1])) {
-                           if (!foundFirstBalance) {
-                               try {
-                                   // Suche nach dem Wert in allen verfügbaren Feldern
-                                   String balanceStr = null;
-                                   for (int i = data.length - 1; i >= 2; i--) {
-                                       if (data[i] != null && !data[i].trim().isEmpty()) {
-                                           balanceStr = data[i].trim();
-                                           break;
-                                       }
-                                   }
-                                   
-                                   if (balanceStr != null && !balanceStr.isEmpty()) {
-                                       initialBalance = parseNumericValue(balanceStr);
-                                       if (initialBalance >= 0) {
-                                           stats.setInitialBalance(initialBalance);
-                                           foundFirstBalance = true;
-                                           LOGGER.info("Found initial balance: " + initialBalance);
-                                       }
-                                   }
-                               } catch (NumberFormatException e) {
-                                   LOGGER.warning("Failed to parse balance: " + e.getMessage());
+                           // Balance und Credit Einträge für beide Formate (MT4 und MT5)
+                   String rowType = data[1].trim();
+                   boolean isBalanceRow = rowType.equalsIgnoreCase("Balance") || rowType.equalsIgnoreCase("Credit");
+                   if (isBalanceRow) {
+                       double profit = 0.0;
+                       try {
+                           String balanceStr = null;
+                           for (int i = data.length - 1; i >= 2; i--) {
+                               if (data[i] != null && !data[i].trim().isEmpty()) {
+                                   balanceStr = data[i].trim();
+                                   break;
                                }
                            }
+                           if (balanceStr != null && !balanceStr.isEmpty()) {
+                               if (balanceStr.contains("[")) {
+                                   balanceStr = balanceStr.split("\\[")[0].trim();
+                               }
+                               profit = parseNumericValue(balanceStr);
+                           }
+                       } catch (NumberFormatException e) {
+                           LOGGER.warning("Failed to parse balance: " + e.getMessage());
+                       }
+
+                       LocalDateTime openTime;
+                       try {
+                           openTime = LocalDateTime.parse(data[0].trim(), DATE_TIME_FORMATTER);
+                       } catch (DateTimeParseException e) {
+                           LOGGER.fine("Failed to parse balance open time: " + data[0]);
+                           skippedLines.add(line);
                            continue;
                        }
-                       // Überspringe andere Balance/Credit Zeilen
+
+                       Trade balanceTrans = new Trade(
+                           openTime, openTime,
+                           rowType, "", 0.0,
+                           0.0, 0.0, 0.0, 0.0,
+                           providerName, providerURL,
+                           0.0, 0.0, profit
+                       );
+                       stats.addBalanceTransaction(balanceTrans);
                        continue;
                    }
                    
@@ -347,16 +357,13 @@ public class DataManager {
                                    if (!profitStr.isEmpty()) {
                                        double rawProfit = parseNumericValue(profitStr);
                                        
-                                       // Skalierungsfaktor basierend auf Symbol und Wert
-                                       double scaleFactor = 100.0; // Standard-Skalierungsfaktor
-                                      
-                                       // Anwenden des Skalierungsfaktors
-                                       profit = rawProfit / scaleFactor;
+                                       // Verwende den rohen Profitwert direkt (keine Division durch 100)
+                                       profit = rawProfit;
                                        
                                        if (debugMode && lineCount <= 5) {
                                            LOGGER.info(String.format(
-                                               "Parsed profit for %s: raw=%f, scale=%f, adjusted=%f", 
-                                               symbol, rawProfit, scaleFactor, profit));
+                                               "Parsed profit for %s: raw=%f, adjusted=%f", 
+                                               symbol, rawProfit, profit));
                                        }
                                    } else {
                                        LOGGER.fine("Empty profit field");
@@ -525,10 +532,20 @@ public class DataManager {
                    }
                }
                
-               // Setze Balance für MQL5-Format, falls nicht gefunden
-               if (isMql5Format && !foundFirstBalance) {
-                   stats.setInitialBalance(initialBalance);
-                   LOGGER.info("Using default initial balance for MQL5 format: " + initialBalance);
+               // Bestimme die Initial Balance aus den Balance-Transaktionen
+               if (!stats.getBalanceTransactions().isEmpty()) {
+                   // Finde die älteste Balance-Transaktion
+                   Trade oldestBalance = stats.getBalanceTransactions().stream()
+                       .min(java.util.Comparator.comparing(Trade::getOpenTime))
+                       .orElse(null);
+                   if (oldestBalance != null) {
+                       stats.setInitialBalance(oldestBalance.getProfit());
+                       LOGGER.info("Determined initial balance from oldest transaction: " + oldestBalance.getProfit());
+                   }
+               } else {
+                   // Fallback auf Default, falls keine Balance-Transaktionen gefunden wurden
+                   stats.setInitialBalance(isMql5Format ? 1000.0 : initialBalance);
+                   LOGGER.info("No balance transactions found. Using initial balance: " + stats.getInitialBalance());
                }
                
                if (!stats.getProfits().isEmpty()) {

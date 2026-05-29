@@ -1,0 +1,11 @@
+#MqlRealMonitor Konfiguration - Automatisch generiert
+#Sat Jun 21 11:42:57 CEST 2025
+basePath=C\:\\Forex\\MqlAnalyzer
+configDir=C\:\\Forex\\MqlAnalyzer\\config
+downloadDir=C\:\\Forex\\MqlAnalyzer\\Realtick\\download
+favoritesFile=C\:\\Forex\\MqlAnalyzer\\config\\favorites.txt
+intervalMinutes=15
+tickDir=C\:\\Forex\\MqlAnalyzer\\Realtick\\tick
+timeoutSeconds=30
+urlTemplate=https\://www.mql5.com/de/signals/%s?source\=Site+Signals+Subscriptions\#\!tab\=account
+userAgent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36

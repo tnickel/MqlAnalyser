@@ -1,4 +1,4 @@
 #MQL5 Analyser Configuration
-#Mon Feb 03 19:05:06 CET 2025
+#Sun Aug 03 12:30:49 CEST 2025
 baseUrl=https\://www.mql5.com/en/signals
-downloadPath=C\:\\forex\\MqlAnalyzer\\download\\mql5
+downloadPath=C\:\\Forex\\MqlAnalyzer\\download\\mql45

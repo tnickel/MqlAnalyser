@@ -210,4 +210,27 @@ public class BasicDataProvider {
         
         return tooltip.toString();
     }
+    
+    /**
+     * Holt die Anzahl der Abonnenten für einen Provider
+     * 
+     * @param fileName Name der Provider-Datei
+     * @return Anzahl der Abonnenten
+     */
+    public int getSubscribers(String fileName) {
+        Map<String, String> data = fileDataReader.getFileData(fileName);
+        if (data.isEmpty()) {
+            LOGGER.warning("Keine Daten für " + fileName + " gefunden");
+            return 0;
+        }
+        
+        String subStr = data.getOrDefault("Subscribers", "0")
+                            .replace(" ", "");
+        try {
+            return Integer.parseInt(subStr);
+        } catch (NumberFormatException e) {
+            LOGGER.warning("Could not parse subscribers: " + subStr);
+            return 0;
+        }
+    }
 }

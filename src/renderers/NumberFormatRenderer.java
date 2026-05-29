@@ -28,7 +28,12 @@ public class NumberFormatRenderer extends DefaultTableCellRenderer {
                                                   int row, int column) {
         // Überprüfen, ob der Wert eine Zahl ist und formatieren
         if (value instanceof Number) {
-            value = formatter.format(((Number) value).doubleValue());
+            Number num = (Number) value;
+            if (num instanceof Integer || num instanceof Long) {
+                value = String.valueOf(num.longValue());
+            } else {
+                value = formatter.format(num.doubleValue());
+            }
         }
         
         // Nutze den HighlightRenderer für Hintergrundfarben und andere Formatierungen

@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>MQL Drawdown Analyzer Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="vue.global.prod.js"></script>
+<script src="multi_data.js"></script>
+<style>
+:root {
+  --bg-body: #090d16;
+  --bg-surface: #111827;
+  --bg-surface-2: #1f2937;
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --border-color: #374151;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --grid: rgba(255, 255, 255, 0.04);
+}
+[data-theme="light"] {
+  --bg-body: #f3f4f6;
+  --bg-surface: #ffffff;
+  --bg-surface-2: #f9fafb;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --grid: rgba(0, 0, 0, 0.05);
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px;
+  background: var(--bg-body);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+#app {
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.search-bar {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  min-width: 240px;
+  transition: all 0.2s;
+}
+.search-bar:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+.theme-btn {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-main);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.theme-btn:hover {
+  background: var(--border-color);
+}
+.zeitraum-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+.zeitraum-label {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-right: 8px;
+}
+.zeitraum-btn {
+  background: var(--bg-surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.zeitraum-btn:hover {
+  background: var(--border-color);
+  color: var(--text-main);
+}
+.zeitraum-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-surface-2);
+}
+.seg button {
+  background: transparent;
+  color: var(--text-main);
+  border: none;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.seg button.active { background: var(--primary); color: #fff; }
+.seg button:not(.active):hover { background: rgba(255,255,255,0.05); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  gap: 20px;
+}
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.card-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.card-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.detail-btn {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: var(--primary);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.detail-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.stat-box {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.stat-value {
+  font-size: 16px;
+  font-weight: 700;
+}
+.stat-value.bad { color: var(--danger); }
+.stat-value.warn { color: var(--warning); }
+.ongoing-badge {
+  font-size: 10px;
+  color: var(--warning);
+  font-weight: 500;
+}
+.chart-wrap {
+  height: 180px;
+  position: relative;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-body);
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+.empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.crosshair {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  pointer-events: none;
+  border-left: 1px dashed var(--text-muted);
+  opacity: 0.5;
+}
+.tooltip-box {
+  position: absolute;
+  background: rgba(17, 24, 39, 0.95);
+  color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  pointer-events: none;
+  z-index: 50;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.tt-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+}
+.tt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tt-danger { color: var(--danger); font-weight: 600; }
+.disclaimer {
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  text-align: center;
+}
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="header-top">
+      <h1>📊 Drawdown Analyse Overview</h1>
+      <div class="controls">
+        <input type="text" class="search-bar" placeholder="Strategie suchen..." v-model="searchQuery">
+        <div class="seg">
+          <button :class="{active: xMode==='trades'}" @click="xMode='trades'">Trade #</button>
+          <button :class="{active: xMode==='time'}" @click="xMode='time'">Datum</button>
+        </div>
+        <button class="theme-btn" @click="toggleTheme">
+          <span v-if="theme==='dark'">☀️ Light Mode</span>
+          <span v-else>🌙 Dark Mode</span>
+        </button>
+      </div>
+    </div>
+    
+    <div class="zeitraum-bar">
+      <span class="zeitraum-label">Zeitraum:</span>
+      <button class="zeitraum-btn" :class="{active: selectedRange==='Heute'}" @click="selectedRange='Heute'">Heute</button>
+      <button class="zeitraum-btn" :class="{active: selectedRange==='1 Woche'}" @click="selectedRange='1 Woche'">1 Woche</button>
+      <button class="zeitraum-btn" :class="{active: selectedRange==='1 Monat'}" @click="selectedRange='1 Monat'">1 Monat</button>
+      <button class="zeitraum-btn" :class="{active: selectedRange==='Aktueller Monat'}" @click="selectedRange='Aktueller Monat'">Aktueller Monat</button>
+      <button class="zeitraum-btn" :class="{active: selectedRange==='6 Monate'}" @click="selectedRange='6 Monate'">6 Monate</button>
+      <button class="zeitraum-btn" :class="{active: selectedRange==='Dieses Jahr'}" @click="selectedRange='Dieses Jahr'">Dieses Jahr</button>
+      <button class="zeitraum-btn" :class="{active: selectedRange==='1 Jahr'}" @click="selectedRange='1 Jahr'">1 Jahr</button>
+      <button class="zeitraum-btn" :class="{active: selectedRange==='Alles'}" @click="selectedRange='Alles'">Alles</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <strategy-card v-for="strat in filteredStrategies"
+                   :key="strat.strategyName"
+                   :strategy="strat"
+                   :x-mode="xMode"
+                   :selected-range="selectedRange"
+                   :filter-range="filterRange"></strategy-card>
+  </div>
+  
+  <div v-if="!filteredStrategies.length" style="text-align: center; padding: 40px; color: var(--text-muted);">
+    Keine Strategien gefunden oder geladen.
+  </div>
+
+  <div class="disclaimer">
+    Diese Analyse dient ausschließlich Informationszwecken. Drawdown-Perioden werden aus geschlossenen Trades rekonstruiert.
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+const DAY_MS = 24 * 3600 * 1000;
+const NON_TRADING_TYPES = new Set([9, 10, 11]);
+
+const app = createApp({
+  setup() {
+    const strategies = ref([]);
+    const searchQuery = ref('');
+    const selectedRange = ref('Alles');
+    const xMode = ref('trades');
+    const theme = ref('dark');
+
+    function toggleTheme() {
+      theme.value = theme.value === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', theme.value);
+    }
+
+    const dateRangeBounds = computed(() => {
+      let min = Infinity;
+      let max = -Infinity;
+      for (const s of strategies.value) {
+        for (const o of s.orders) {
+          if (o.CloseTime) {
+            const t = Number(o.CloseTime);
+            if (t < min) min = t;
+            if (t > max) max = t;
+          }
+        }
+      }
+      return min === Infinity ? { min: 0, max: 0 } : { min, max };
+    });
+
+    const filterRange = computed(() => {
+      const bounds = dateRangeBounds.value;
+      if (bounds.max === 0) return { min: 0, max: 0 };
+      
+      let minTime = bounds.min;
+      if (selectedRange.value === 'Heute') {
+        const d = new Date(bounds.max);
+        d.setHours(0,0,0,0);
+        minTime = d.getTime();
+      } else if (selectedRange.value === '1 Woche') {
+        minTime = bounds.max - 7 * DAY_MS;
+      } else if (selectedRange.value === '1 Monat') {
+        minTime = bounds.max - 30 * DAY_MS;
+      } else if (selectedRange.value === 'Aktueller Monat') {
+        const d = new Date(bounds.max);
+        d.setDate(1);
+        d.setHours(0,0,0,0);
+        minTime = d.getTime();
+      } else if (selectedRange.value === '6 Monate') {
+        minTime = bounds.max - 180 * DAY_MS;
+      } else if (selectedRange.value === 'Dieses Jahr') {
+        const d = new Date(bounds.max);
+        d.setMonth(0, 1);
+        d.setHours(0,0,0,0);
+        minTime = d.getTime();
+      } else if (selectedRange.value === '1 Jahr') {
+        minTime = bounds.max - 365 * DAY_MS;
+      }
+      return {
+        min: Math.max(bounds.min, minTime),
+        max: bounds.max
+      };
+    });
+
+    const filteredStrategies = computed(() => {
+      let list = strategies.value;
+      if (searchQuery.value.trim()) {
+        const q = searchQuery.value.toLowerCase();
+        list = list.filter(s => s.strategyName.toLowerCase().includes(q));
+      }
+      return list;
+    });
+
+    onMounted(() => {
+      if (window.allStrategiesData) {
+        strategies.value = window.allStrategiesData;
+      }
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      theme.value = prefersDark ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', theme.value);
+    });
+
+    return {
+      strategies, searchQuery, selectedRange, xMode, theme,
+      filterRange, filteredStrategies, toggleTheme
+    };
+  }
+});
+
+app.component('strategy-card', {
+  props: ['strategy', 'xMode', 'selectedRange', 'filterRange'],
+  template: `
+    <div class="card">
+       <div class="card-header">
+          <div class="card-title-group">
+            <h2 class="card-title">{{ strategy.strategyName }}</h2>
+            <span class="card-subtitle">
+              Trades: {{ filteredTrades.length }} &middot; 
+              Win Rate: {{ winRate.toFixed(1) }}% &middot; 
+              Profit: <span :class="totalProfit >= 0 ? 'text-success' : 'text-danger'">{{ fmtMoney(totalProfit) }}</span>
+            </span>
+          </div>
+          <button class="detail-btn" @click="openSingleAnalysis">Einzelanalyse ↗</button>
+       </div>
+       <div class="summary-grid">
+          <div class="stat-box">
+             <span class="stat-label">Drawdowns</span>
+             <span class="stat-value">{{ summary.count }} <span v-if="summary.ongoingCount" class="ongoing-badge">({{ summary.ongoingCount }} aktiv)</span></span>
+          </div>
+          <div class="stat-box">
+             <span class="stat-label">Max DD $</span>
+             <span class="stat-value bad">{{ fmtMoney(-summary.maxDepth) }}</span>
+          </div>
+          <div class="stat-box">
+             <span class="stat-label">Max DD %</span>
+             <span class="stat-value bad">{{ summary.maxDepthPct.toFixed(2) }}%</span>
+          </div>
+          <div class="stat-box">
+             <span class="stat-label">Avg DD %</span>
+             <span class="stat-value">{{ summary.avgDepthPct.toFixed(2) }}%</span>
+          </div>
+          <div class="stat-box">
+             <span class="stat-label">Avg Recovery</span>
+             <span class="stat-value">{{ summary.avgRecoveryDays == null ? '—' : summary.avgRecoveryDays.toFixed(0) + ' d' }}</span>
+          </div>
+          <div class="stat-box">
+             <span class="stat-label">Longest UW</span>
+             <span class="stat-value warn">{{ summary.longestUnderwater.toFixed(0) }} d</span>
+          </div>
+       </div>
+       <div class="chart-wrap" ref="wrap">
+          <canvas ref="chart" @mousemove="onCanvasMove" @mouseleave="onCanvasLeave"></canvas>
+          <div v-if="!filteredTrades.length" class="empty">Keine Trades in diesem Zeitraum</div>
+          <div v-if="hover" class="crosshair" :style="{ left: hover.px + 'px' }"></div>
+          <div v-if="hover" class="tooltip-box" :style="{ left: tooltipPos.left + 'px', top: tooltipPos.top + 'px' }">
+             <div class="tt-title">Trade #{{ hover.idx }} &middot; {{ fmtDate(hover.t) }}</div>
+             <div class="tt-row"><span class="tt-label">Unter Wasser:</span><span class="tt-value tt-danger">{{ hover.uw.toFixed(2) }}%</span></div>
+             <div class="tt-row"><span class="tt-label">Equity:</span><span class="tt-value">{{ fmtMoney(hover.eq) }}</span></div>
+          </div>
+       </div>
+    </div>
+  `,
+  setup(props) {
+    const chart = ref(null);
+    const wrap = ref(null);
+    const hover = ref(null);
+    let layout = null;
+
+    const processedOrders = computed(() => {
+      const sorted = [...props.strategy.orders]
+        .filter(o => o && o.CloseTime != null)
+        .map(o => {
+          const isNonTrading = NON_TRADING_TYPES.has(o.Type) || String(o.Type).toLowerCase() === 'balance' || String(o.Type).toLowerCase() === 'credit';
+          return {
+            t: Number(o.CloseTime),
+            pl: Number(o.ProfitLoss) || 0,
+            balance: Number(o.Balance) || 0,
+            isNonTrading,
+            type: o.Type
+          };
+        })
+        .filter(o => !isNaN(o.t))
+        .sort((a, b) => a.t - b.t);
+
+      if (!sorted.length) return [];
+
+      const out = [];
+      let nav = 1.0;
+      let currentBalance = 0.0;
+      let hasSetInitial = false;
+
+      for (let i = 0; i < sorted.length; i++) {
+        const o = sorted[i];
+        if (!hasSetInitial) {
+          if (o.isNonTrading) {
+            currentBalance = o.pl;
+            nav = 1.0;
+            hasSetInitial = true;
+          } else {
+            currentBalance = o.balance - o.pl;
+            if (currentBalance <= 0) currentBalance = 1000.0;
+            nav = 1.0;
+            hasSetInitial = true;
+          }
+        }
+
+        if (o.isNonTrading) {
+          currentBalance += o.pl;
+          out.push({
+            ...o,
+            nav,
+            simulatedBalance: currentBalance
+          });
+        } else {
+          const oldBalance = currentBalance;
+          currentBalance += o.pl;
+          if (oldBalance > 0) {
+            nav = nav * (currentBalance / oldBalance);
+          } else {
+            nav = 1.0;
+          }
+          out.push({
+            ...o,
+            nav,
+            simulatedBalance: currentBalance
+          });
+        }
+      }
+      return out;
+    });
+
+    const filteredTrades = computed(() => {
+      const range = props.filterRange;
+      if (range.max === 0) return [];
+      
+      return processedOrders.value
+        .filter(o => !o.isNonTrading)
+        .filter(o => o.t >= range.min && o.t <= range.max);
+    });
+
+    const winRate = computed(() => {
+      const list = filteredTrades.value;
+      if (!list.length) return 0;
+      const wins = list.filter(t => t.pl > 0).length;
+      return (wins * 100) / list.length;
+    });
+
+    const totalProfit = computed(() => {
+      return filteredTrades.value.reduce((s, t) => s + t.pl, 0);
+    });
+
+    const detectedStartingEquity = computed(() => {
+      const first = processedOrders.value.find(o => !o.isNonTrading);
+      if (first) {
+        return first.simulatedBalance - first.pl;
+      }
+      return processedOrders.value[0]?.simulatedBalance || 1000.0;
+    });
+
+    const equityCurve = computed(() => {
+      const trades = filteredTrades.value;
+      if (!trades.length) return [];
+      
+      const out = [];
+      const startEq = detectedStartingEquity.value;
+      const firstNav = trades[0].nav || 1.0;
+      
+      for (let i = 0; i < trades.length; i++) {
+        const currentNav = trades[i].nav || 1.0;
+        const relativeNav = currentNav / firstNav;
+        out.push({
+          idx: i + 1,
+          t: trades[i].t,
+          y: startEq * relativeNav,
+          pl: trades[i].pl
+        });
+      }
+      return out;
+    });
+
+    const underwaterSeries = computed(() => {
+      const eq = equityCurve.value;
+      if (!eq.length) return [];
+      const out = new Array(eq.length);
+      let peak = eq[0].y;
+      for (let i = 0; i < eq.length; i++) {
+        if (eq[i].y > peak) peak = eq[i].y;
+        const denom = Math.abs(peak) || 1;
+        out[i] = {
+          t: eq[i].t,
+          idx: eq[i].idx,
+          y: eq[i].y,
+          peak,
+          uw: (eq[i].y - peak) / denom * 100,
+        };
+      }
+      return out;
+    });
+
+    const drawdownPeriods = computed(() => {
+      const eq = equityCurve.value;
+      if (eq.length < 2) return [];
+      const periods = [];
+      let peakIdx = 0;
+      let troughIdx = -1;
+
+      for (let i = 1; i < eq.length; i++) {
+        const cur = eq[i];
+        const peak = eq[peakIdx];
+        if (cur.y > peak.y) {
+          if (troughIdx !== -1) {
+            const trough = eq[troughIdx];
+            periods.push({
+              peakIdx, peakTime: peak.t, peakValue: peak.y,
+              troughIdx, troughTime: trough.t, troughValue: trough.y,
+              recoveryIdx: i, recoveryTime: cur.t,
+              depth: peak.y - trough.y,
+              depthPct: peak.y !== 0 ? (peak.y - trough.y) / Math.abs(peak.y) * 100 : 0,
+              underwaterDays: (cur.t - peak.t) / DAY_MS,
+              declineDays:    (trough.t - peak.t) / DAY_MS,
+              recoveryDays:   (cur.t - trough.t) / DAY_MS,
+              ongoing: false,
+            });
+            troughIdx = -1;
+          }
+          peakIdx = i;
+        } else if (cur.y < peak.y) {
+          if (troughIdx === -1 || cur.y < eq[troughIdx].y) troughIdx = i;
+        }
+      }
+
+      if (troughIdx !== -1) {
+        const peak = eq[peakIdx];
+        const trough = eq[troughIdx];
+        const last = eq[eq.length - 1];
+        periods.push({
+          peakIdx, peakTime: peak.t, peakValue: peak.y,
+          troughIdx, troughTime: trough.t, troughValue: trough.y,
+          recoveryIdx: null, recoveryTime: null,
+          depth: peak.y - trough.y,
+          depthPct: peak.y !== 0 ? (peak.y - trough.y) / Math.abs(peak.y) * 100 : 0,
+          underwaterDays: (last.t - peak.t) / DAY_MS,
+          declineDays:    (trough.t - peak.t) / DAY_MS,
+          recoveryDays:   null,
+          ongoing: true,
+        });
+      }
+      return periods;
+    });
+
+    const summary = computed(() => {
+      const p = drawdownPeriods.value;
+      if (!p.length) {
+        return { count: 0, avgDepthPct: 0, maxDepth: 0, maxDepthPct: 0,
+                 avgRecoveryDays: null, longestUnderwater: 0, ongoingCount: 0 };
+      }
+      const closed = p.filter(d => !d.ongoing);
+      return {
+        count: p.length,
+        avgDepthPct: p.reduce((s, d) => s + d.depthPct, 0) / p.length,
+        maxDepth: p.reduce((m, d) => d.depth > m ? d.depth : m, 0),
+        maxDepthPct: p.reduce((m, d) => d.depthPct > m ? d.depthPct : m, 0),
+        avgRecoveryDays: closed.length
+          ? closed.reduce((s, d) => s + d.recoveryDays, 0) / closed.length
+          : null,
+        longestUnderwater: p.reduce((m, d) => d.underwaterDays > m ? d.underwaterDays : m, 0),
+        ongoingCount: p.length - closed.length,
+      };
+    });
+
+    const tooltipPos = computed(() => {
+      if (!hover.value || !layout) return { left: 0, top: 0 };
+      const TT_W = 150, TT_H = 50, MARGIN = 10;
+      let left = hover.value.px + MARGIN;
+      if (left + TT_W > layout.cw + layout.padL) left = hover.value.px - TT_W - MARGIN;
+      let top = Math.max(layout.padT + 4, Math.min(hover.value.py - 30, layout.padT + layout.ch - TT_H - 4));
+      return { left, top };
+    });
+
+    function fmtMoney(v) {
+      if (v == null || !isFinite(v)) return '—';
+      const sign = v < 0 ? '-' : '';
+      const a = Math.abs(v);
+      if (a >= 1e6) return sign + (a / 1e6).toFixed(2) + 'M';
+      if (a >= 1e3) return sign + (a / 1e3).toFixed(1) + 'k';
+      return sign + a.toFixed(0);
+    }
+
+    function fmtDate(ms) {
+      if (!ms) return '—';
+      const d = new Date(ms);
+      return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+    }
+
+    function niceScale(minVal, maxVal) {
+      const span = maxVal - minVal;
+      if (span <= 0) return { min: -1, max: 0, step: 0.5, count: 2 };
+      let step = span / 4;
+      const exp = Math.floor(Math.log10(step));
+      const base = Math.pow(10, exp);
+      const m = step / base;
+      let nice;
+      if (m < 1.5) nice = 1;
+      else if (m < 3) nice = 2;
+      else if (m < 7) nice = 5;
+      else nice = 10;
+      const finalStep = nice * base;
+      const min = Math.floor(minVal / finalStep) * finalStep;
+      const max = 0; // Drawdown maxes at 0%
+      const count = Math.round((max - min) / finalStep);
+      return { min, max, step: finalStep, count };
+    }
+
+    function hexWithAlpha(hex, a) {
+      const m = hex.trim().match(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+      if (!m) return hex;
+      let h = m[1];
+      if (h.length === 3) h = h.split('').map(c => c + c).join('');
+      const r = parseInt(h.slice(0, 2), 16);
+      const g = parseInt(h.slice(2, 4), 16);
+      const b = parseInt(h.slice(4, 6), 16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    function draw() {
+      const canvas = chart.value;
+      if (!canvas || !canvas.parentElement) return;
+      const wrapEl = canvas.parentElement;
+      const dpr = window.devicePixelRatio || 1;
+      const w = wrapEl.clientWidth, h = wrapEl.clientHeight;
+      if (w < 10 || h < 10) return;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+
+      const uw = underwaterSeries.value;
+      if (!uw.length) { layout = null; return; }
+
+      const padL = 40, padR = 10, padT = 10, padB = 20;
+      const cw = w - padL - padR, ch = h - padT - padB;
+      if (cw <= 0 || ch <= 0) { layout = null; return; }
+
+      const xKey = props.xMode === 'trades' ? 'idx' : 't';
+      const xMin = uw[0][xKey];
+      const xMax = uw[uw.length - 1][xKey];
+      const xRange = (xMax - xMin) || 1;
+
+      let minUw = 0;
+      for (const p of uw) if (p.uw < minUw) minUw = p.uw;
+      const yScale = niceScale(minUw * 1.1, 0);
+      const yMin = yScale.min;
+      const yMax = yScale.max;
+      const yRange = (yMax - yMin) || 1;
+
+      const css = getComputedStyle(document.documentElement);
+      const colGrid = css.getPropertyValue('--grid').trim();
+      const colMuted = css.getPropertyValue('--text-muted').trim();
+      const colDanger = css.getPropertyValue('--danger').trim();
+      const colBorder = css.getPropertyValue('--border-color').trim();
+
+      const xToPx = (v) => padL + ((v - xMin) / xRange) * cw;
+      const yToPx = (v) => padT + ch - ((v - yMin) / yRange) * ch;
+
+      ctx.font = '9px "Inter", sans-serif';
+
+      // Grid lines & labels
+      ctx.strokeStyle = colGrid;
+      ctx.lineWidth = 1;
+      ctx.fillStyle = colMuted;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i <= yScale.count; i++) {
+        const yv = yMin + i * yScale.step;
+        const py = yToPx(yv);
+        ctx.beginPath();
+        ctx.moveTo(padL, py);
+        ctx.lineTo(padL + cw, py);
+        ctx.stroke();
+        ctx.fillText(yv.toFixed(0) + '%', padL - 4, py);
+      }
+
+      // X-Axis Ticks
+      ctx.fillStyle = colMuted;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const xTicks = Math.min(4, Math.max(1, Math.floor(cw / 75)));
+      for (let i = 0; i <= xTicks; i++) {
+        const xv = xMin + (xRange * i / xTicks);
+        const px = padL + (cw * i / xTicks);
+        ctx.fillText(props.xMode === 'trades' ? '#' + Math.round(xv) : new Date(xv).toLocaleDateString(undefined, {month:'short', day:'numeric'}), px, padT + ch + 4);
+      }
+
+      // Area fill
+      const zeroY = yToPx(0);
+      ctx.beginPath();
+      ctx.moveTo(xToPx(uw[0][xKey]), zeroY);
+      for (const p of uw) ctx.lineTo(xToPx(p[xKey]), yToPx(p.uw));
+      ctx.lineTo(xToPx(uw[uw.length - 1][xKey]), zeroY);
+      ctx.closePath();
+      ctx.fillStyle = hexWithAlpha(colDanger, 0.15);
+      ctx.fill();
+
+      // Line
+      ctx.strokeStyle = colDanger;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      uw.forEach((p, i) => {
+        const px = xToPx(p[xKey]), py = yToPx(p.uw);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+
+      // Border outline
+      ctx.strokeStyle = colBorder;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(padL, padT, cw, ch);
+
+      layout = { padL, padR, padT, padB, cw, ch, xMin, xMax, xRange, yMin, yMax, yRange, xKey, xToPx, yToPx };
+    }
+
+    function onCanvasMove(ev) {
+      if (!layout) return;
+      const uw = underwaterSeries.value;
+      if (!uw.length) return;
+      const rect = chart.value.getBoundingClientRect();
+      const px = ev.clientX - rect.left;
+      if (px < layout.padL || px > layout.padL + layout.cw) {
+        hover.value = null;
+        return;
+      }
+      const xv = layout.xMin + ((px - layout.padL) / layout.cw) * layout.xRange;
+      const xKey = layout.xKey;
+      let lo = 0, hi = uw.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (uw[mid][xKey] < xv) lo = mid + 1; else hi = mid;
+      }
+      let nearest = uw[lo];
+      if (lo > 0 && Math.abs(uw[lo - 1][xKey] - xv) < Math.abs(uw[lo][xKey] - xv)) nearest = uw[lo - 1];
+      
+      hover.value = {
+        idx: nearest.idx,
+        t: nearest.t,
+        uw: nearest.uw,
+        eq: nearest.y,
+        px: layout.xToPx(nearest[xKey]),
+        py: layout.yToPx(nearest.uw)
+      };
+    }
+
+    function onCanvasLeave() {
+      hover.value = null;
+    }
+
+    function openSingleAnalysis() {
+      // Because file:// URLs block ALL cross-page data mechanisms (localStorage, 
+      // window.opener, window.name, fetch), we pass data via URL hash fragment.
+      // Hash fragments have no practical browser size limit (several MB supported)
+      // and work perfectly with file:// URLs.
+      
+      const payload = {
+        s: {  // strategyData (shortened key to save URL space)
+          strategyName: props.strategy.strategyName,
+          projectName: 'MqlAnalyser'
+        },
+        o: props.strategy.orders  // ordersData
+      };
+      
+      const hash = encodeURIComponent(JSON.stringify(payload));
+      window.open(`index.html#data=${hash}`, '_blank');
+    }
+
+    onMounted(() => {
+      const resizeObs = new ResizeObserver(() => draw());
+      if (chart.value && chart.value.parentElement) {
+        resizeObs.observe(chart.value.parentElement);
+      }
+      nextTick(() => draw());
+    });
+
+    watch([filteredTrades, props.xMode], () => {
+      nextTick(() => draw());
+    });
+
+    return {
+      chart, wrap, hover, tooltipPos,
+      filteredTrades, winRate, totalProfit, summary,
+      fmtMoney, fmtDate, onCanvasMove, onCanvasLeave, openSingleAnalysis
+    };
+  }
+});
+
+app.mount('#app');
+</script>
+</body>
+</html>

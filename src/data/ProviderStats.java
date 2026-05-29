@@ -14,6 +14,7 @@ public class ProviderStats {
     private final List<Trade> trades;
     private final List<Double> profits;
     private final Map<YearMonth, Double> monthlyProfitPercentages;
+    private final List<Trade> balanceTransactions;
     private double initialBalance;
     private boolean hasStopLoss = false;
     private boolean hasTakeProfit = false;
@@ -25,6 +26,7 @@ public class ProviderStats {
         this.trades = new ArrayList<>();
         this.profits = new ArrayList<>();
         this.monthlyProfitPercentages = new TreeMap<>();
+        this.balanceTransactions = new ArrayList<>();
         this.initialBalance = 0.0;
     }
 
@@ -247,5 +249,13 @@ public class ProviderStats {
         }
         
         return maxDrawdownPercent; // Korrigiert von "return 0;" zu "return maxDrawdownPercent;"
+    }
+
+    public void addBalanceTransaction(Trade transaction) {
+        this.balanceTransactions.add(transaction);
+    }
+
+    public List<Trade> getBalanceTransactions() {
+        return balanceTransactions;
     }
 }
