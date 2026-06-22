@@ -549,6 +549,7 @@ public class DataManager {
                }
                
                if (!stats.getProfits().isEmpty()) {
+                   stats.sortTradesChronologically();
                    signalProviderStats.put(file.getName(), stats);
                    LOGGER.info(String.format("Successfully processed %s: %d trades loaded, Initial Balance: %.2f, Format: %s",
                            file.getName(), tradeCounts, stats.getInitialBalance(), isMql5Format ? "MQL5" : "Standard"));

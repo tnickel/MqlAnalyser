@@ -223,7 +223,8 @@ public class TradeListTable extends JTable {
         
         try {
             String unitChar = durationStr.substring(durationStr.length() - 1);
-            double value = Double.parseDouble(durationStr.substring(0, durationStr.length() - 1));
+            String numberStr = durationStr.substring(0, durationStr.length() - 1).replace(',', '.');
+            double value = Double.parseDouble(numberStr);
             
             switch (unitChar) {
                 case "s": return value;

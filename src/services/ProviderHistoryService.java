@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
+import data.ProviderStats;
 import db.HistoryDatabaseManager;
 import db.HistoryDatabaseManager.HistoryEntry;
 import utils.ApplicationConstants;
@@ -30,6 +31,7 @@ public class ProviderHistoryService {
     
     // Konstanten für Statistiktypen
     public static final String STAT_TYPE_3MPDD = "3MPDD";
+    public static final String STAT_TYPE_SUBSCRIBERS = "SUBSCRIBERS";
     
     // Schlüssel für die Preferences
     private static final String PREF_LAST_WEEKLY_SAVE = "last_weekly_stat_save";
@@ -116,6 +118,15 @@ public class ProviderHistoryService {
                             // Speichere den Wert im Cache
                             getProviderCache(providerName).put(STAT_TYPE_3MPDD, mpddValue);
                             LOGGER.fine("Letzter 3MPDD-Wert für " + providerName + " geladen: " + mpddValue);
+                        }
+                        
+                        // Hole den letzten SUBSCRIBERS-Wert für diesen Provider aus der Datenbank
+                        Double subscribersValue = dbManager.getLatestStatValue(providerName, STAT_TYPE_SUBSCRIBERS);
+                        
+                        if (subscribersValue != null) {
+                            // Speichere den Wert im Cache
+                            getProviderCache(providerName).put(STAT_TYPE_SUBSCRIBERS, subscribersValue);
+                            LOGGER.fine("Letzter SUBSCRIBERS-Wert für " + providerName + " geladen: " + subscribersValue);
                         }
                         
                         // Hier können später weitere Statistik-Typen hinzugefügt werden
@@ -412,8 +423,12 @@ public class ProviderHistoryService {
                         // In DB speichern
                         dbManager.storeStatValue(providerName, STAT_TYPE_3MPDD, mpdd3, true);
                         
-                        LOGGER.info(String.format("3MPDD-Wert %.4f für Provider %s gespeichert", 
-                                mpdd3, providerName));
+                        // Subscribers speichern
+                        double subscribers = htmlDb.getSubscribers(providerName);
+                        dbManager.storeStatValue(providerName, STAT_TYPE_SUBSCRIBERS, subscribers, true);
+                        
+                        LOGGER.info(String.format("3MPDD-Wert %.4f und Subscribers %.0f für Provider %s gespeichert", 
+                                mpdd3, subscribers, providerName));
                     }
                 }
             }
@@ -459,7 +474,9 @@ public class ProviderHistoryService {
                     // Speichere den 3MPDD-Wert
                     providerValues.put(STAT_TYPE_3MPDD, mpdd3);
                     
-                    // Hier können später weitere Statistik-Typen hinzugefügt werden
+                    // Speichere den Abonnenten-Wert
+                    double subscribers = htmlDb.getSubscribers(providerName);
+                    providerValues.put(STAT_TYPE_SUBSCRIBERS, subscribers);
                     
                     allValues.put(providerName, providerValues);
                 }
@@ -527,7 +544,11 @@ public class ProviderHistoryService {
                     providerStats.put(STAT_TYPE_3MPDD, mpddHistory);
                 }
                 
-                // Hier können weitere Statistiktypen hinzugefügt werden, wenn sie implementiert werden
+                // Subscribers-Historie abrufen
+                List<HistoryEntry> subsHistory = dbManager.getStatHistory(providerName, STAT_TYPE_SUBSCRIBERS);
+                if (!subsHistory.isEmpty()) {
+                    providerStats.put(STAT_TYPE_SUBSCRIBERS, subsHistory);
+                }
                 
                 if (!providerStats.isEmpty()) {
                     result.put(providerName, providerStats);
@@ -583,6 +604,29 @@ public class ProviderHistoryService {
         }
         
         return success;
+    }
+
+    /**
+     * Findet alle geladenen Provider, die eine neue Analyse benötigen (nie analysiert oder > 7 Tage her).
+     */
+    public List<String> getProvidersNeedingAnalysis(Map<String, ProviderStats> allStats) {
+        List<String> needingAnalysis = new java.util.ArrayList<>();
+        if (dbManager == null || allStats == null) {
+            return needingAnalysis;
+        }
+        
+        for (String providerName : allStats.keySet()) {
+            HistoryDatabaseManager.AnalysisResult analysis = dbManager.getProviderAnalysis(providerName);
+            if (analysis == null) {
+                needingAnalysis.add(providerName);
+            } else {
+                java.time.LocalDateTime lastAnalyzed = analysis.getLastAnalyzed();
+                if (lastAnalyzed == null || java.time.temporal.ChronoUnit.DAYS.between(lastAnalyzed, java.time.LocalDateTime.now()) >= 7) {
+                    needingAnalysis.add(providerName);
+                }
+            }
+        }
+        return needingAnalysis;
     }
 
     /**

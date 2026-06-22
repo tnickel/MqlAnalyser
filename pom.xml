@@ -4,18 +4,19 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 
 <groupId>com.mqlanalyser</groupId>
 <artifactId>MqlAnalyser</artifactId>
-<version>1.0.1</version>
+<version>1.0.17</version>
 
 <properties>
-<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
-<project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
+<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 <maven.compiler.source>11</maven.compiler.source>
 <maven.compiler.target>11</maven.compiler.target>
-<file.encoding>ISO-8859-1</file.encoding>
+<file.encoding>UTF-8</file.encoding>
 </properties>
 
 <build>
 <sourceDirectory>src</sourceDirectory>
+<testSourceDirectory>test</testSourceDirectory>
 <resources>
 <resource>
 <directory>src/main/resources</directory>
@@ -29,11 +30,11 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 <configuration>
 <source>11</source>
 <target>11</target>
-<encoding>ISO-8859-1</encoding>
+<encoding>UTF-8</encoding>
 <compilerArgs>
 <arg>-Xlint:none</arg>
 <arg>-encoding</arg>
-<arg>ISO-8859-1</arg>
+<arg>UTF-8</arg>
 </compilerArgs>
 </configuration>
 </plugin>
@@ -42,7 +43,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 <artifactId>maven-resources-plugin</artifactId>
 <version>3.2.0</version>
 <configuration>
-<encoding>ISO-8859-1</encoding>
+<encoding>UTF-8</encoding>
 </configuration>
 </plugin>
 <plugin>
@@ -154,5 +155,40 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     <artifactId>jsoup</artifactId>
     <version>1.15.3</version>
 </dependency>
+<!-- JUnit Jupiter for Unit Testing -->
+<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter-api</artifactId>
+    <version>5.9.2</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter-params</artifactId>
+    <version>5.9.2</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter-engine</artifactId>
+    <version>5.9.2</version>
+    <scope>test</scope>
+</dependency>
 </dependencies>
 </project>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

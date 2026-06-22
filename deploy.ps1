@@ -45,7 +45,7 @@ if ($pomContent -match $matchRegex) {
 
 # Run Maven build to compile and generate fat JAR
 Write-Host "==> Building executable package with Maven..."
-mvn clean package -DskipTests
+mvn package -DskipTests
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Maven compilation/packaging failed!"

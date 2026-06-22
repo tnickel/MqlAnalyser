@@ -375,20 +375,6 @@ public class CurrencyPairTradesChart extends JPanel {
         NumberAxis lotsAxis = (NumberAxis) lotsPlot.getRangeAxis();
         lotsAxis.setLabel("Anzahl Lots");
         lotsAxis.setLabelFont(new Font("SansSerif", Font.BOLD, 16));
-        
-        // Bestimme den Maximalwert für bessere Skalierung
-        double maxLotValue = 0;
-        for (int i = 0; i < lotsDataset.getSeriesCount(); i++) {
-            for (int j = 0; j < lotsDataset.getItemCount(i); j++) {
-                double value = lotsDataset.getYValue(i, j);
-                if (value > maxLotValue) maxLotValue = value;
-            }
-        }
-        
-        // Setze einen sinnvollen Tick-Abstand (etwa 4-5 Tick-Markierungen)
-        double lotTickSize = Math.ceil(maxLotValue * 4) / 16.0;  // Ergibt in etwa 4 Unterteilungen
-        if (lotTickSize < 0.25) lotTickSize = 0.25;  // Mindestens 0.25
-        lotsAxis.setTickUnit(new NumberTickUnit(lotTickSize));
         lotsAxis.setNumberFormatOverride(new DecimalFormat("0.00"));
     
     }

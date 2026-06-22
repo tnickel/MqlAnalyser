@@ -216,7 +216,7 @@ public class TableRefreshManager {
             else if ("Risk Score".equals(columnName)) {
                 mainTable.getColumnModel().getColumn(i).setCellRenderer(riskRenderer);
             }
-            else if ("No.".equals(columnName) || "Signal Provider".equals(columnName)) {
+            else if ("No.".equals(columnName) || "Signal Provider".equals(columnName) || "M/G".equals(columnName)) {
                 mainTable.getColumnModel().getColumn(i).setCellRenderer(renderer);
             }
             else {

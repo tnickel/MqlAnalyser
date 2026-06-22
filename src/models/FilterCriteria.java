@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import data.ProviderStats;
 import data.Trade;
+import utils.ApplicationConstants;
 
 public class FilterCriteria implements Serializable
 {
@@ -21,8 +22,21 @@ public class FilterCriteria implements Serializable
     private static final Logger LOGGER = Logger.getLogger(FilterCriteria.class.getName());
     
     private Map<Integer, FilterRange> columnFilters;
-    private static final String SAVE_FILE = "filter_criteria.ser"; // Datei zum Speichern der Filterwerte
     private String currencyPairsFilter; // Filter für Währungspaare
+
+    private static String getSaveFilePath()
+    {
+        if (Boolean.getBoolean("mql.test"))
+        {
+            return "filter_criteria.ser";
+        }
+        java.io.File configDir = new java.io.File(ApplicationConstants.ROOT_PATH, "config");
+        if (!configDir.exists())
+        {
+            configDir.mkdirs();
+        }
+        return new java.io.File(configDir, "filter_criteria.ser").getAbsolutePath();
+    }
     
     public FilterCriteria()
     {
@@ -32,8 +46,8 @@ public class FilterCriteria implements Serializable
     
     public void addFilter(int column, FilterRange range)
     {
-        // Ignoriere den Filter für MaxDrawdown (column 15)
-        if (column != 15) {
+        // Ignoriere den Filter für MaxDrawdown (column 16)
+        if (column != 16) {
             columnFilters.put(column, range);
         }
     }
@@ -54,8 +68,8 @@ public class FilterCriteria implements Serializable
             int column = entry.getKey();
             FilterRange range = entry.getValue();
             
-            // Ignoriere den MaxDrawdown-Filter (column 15)
-            if (column == 15) {
+            // Ignoriere den MaxDrawdown-Filter (column 16)
+            if (column == 16) {
                 continue;
             }
             
@@ -65,8 +79,8 @@ public class FilterCriteria implements Serializable
                 continue;
             }
             
-            // Spezielle Behandlung für Risiko-Spalte (Index 21)
-            if (column == 21) {
+            // Spezielle Behandlung für Risiko-Spalte (Index 22)
+            if (column == 22) {
                 // Risiko-Wert aus ProviderStats holen, da in der Tabelle als String dargestellt
                 int riskValue = stats.getRiskCategory();
                 if (!range.matches(riskValue)) {
@@ -127,7 +141,7 @@ public class FilterCriteria implements Serializable
     public Map<Integer, FilterRange> getFilters()
     {
         // Entferne den MaxDrawdown-Filter, falls er versehentlich enthalten ist
-        columnFilters.remove(15);
+        columnFilters.remove(16);
         return columnFilters;
     }
     
@@ -135,16 +149,16 @@ public class FilterCriteria implements Serializable
     {
         this.columnFilters = new HashMap<>(filters);
         // Entferne den MaxDrawdown-Filter, falls er enthalten ist
-        this.columnFilters.remove(15);
+        this.columnFilters.remove(16);
     }
     
     public void saveFilters()
     {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(SAVE_FILE)))
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(getSaveFilePath())))
         {
             // Entferne den MaxDrawdown-Filter vor dem Speichern
             Map<Integer, FilterRange> filtersToSave = new HashMap<>(columnFilters);
-            filtersToSave.remove(15);
+            filtersToSave.remove(16);
             
             // Speichere Spaltenfilter
             oos.writeObject(filtersToSave);
@@ -163,13 +177,13 @@ public class FilterCriteria implements Serializable
     @SuppressWarnings("unchecked")
     public void loadFilters()
     {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(SAVE_FILE)))
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(getSaveFilePath())))
         {
             // Lade Spaltenfilter
             columnFilters = (Map<Integer, FilterRange>) ois.readObject();
             
             // Entferne den MaxDrawdown-Filter, falls er enthalten ist
-            columnFilters.remove(15);
+            columnFilters.remove(16);
             
             // Lade Währungspaar-Filter
             try {

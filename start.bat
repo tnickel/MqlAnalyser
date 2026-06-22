@@ -25,18 +25,18 @@ if %ERRORLEVEL% neq 0 (
     color 0C
     echo.
     echo [FEHLER] Java wurde nicht in den Umgebungsvariablen gefunden.
-    echo Bitte stellen Sie sicher, dass Java (Version 11 oder neuer) installiert
+    echo Bitte stellen Sie sicher, dass Java ^(Version 11 oder neuer^) installiert
     echo und in der Systemvariable PATH eingetragen ist.
     goto error_end
 )
 
 :: 2. Überprüfe ob Maven installiert ist und im PATH liegt
 echo [2/3] Überprüfe Maven-Installation...
-mvn -version >nul 2>&1
+call mvn -version >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     color 0C
     echo.
-    echo [FEHLER] Maven (mvn) wurde nicht in den Umgebungsvariablen gefunden.
+    echo [FEHLER] Maven ^(mvn^) wurde nicht in den Umgebungsvariablen gefunden.
     echo Bitte installieren Sie Apache Maven und fügen Sie es zu PATH hinzu.
     goto error_end
 )
@@ -50,7 +50,7 @@ call mvn javafx:run
 :: Falls javafx:run fehlschlägt, versuche exec:java als Fallback
 if %ERRORLEVEL% neq 0 (
     echo.
-    echo [WARNUNG] Start über javafx:run fehlgeschlagen (Fehlercode %ERRORLEVEL%).
+    echo [WARNUNG] Start über javafx:run fehlgeschlagen ^(Fehlercode %ERRORLEVEL%^).
     echo Versuche alternativen Start über exec:java...
     echo.
     call mvn compile exec:java -Dexec.mainClass="SignalProviderTable"

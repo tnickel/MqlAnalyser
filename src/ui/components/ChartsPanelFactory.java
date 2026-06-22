@@ -17,10 +17,14 @@ import charts.SymbolDistributionChart;
 import charts.ThreeMonthProfitChart;
 import charts.TradeStackingChart;
 import charts.WeeklyLotsizeChart;
+import charts.TradeDurationHistogramChart;
+import charts.ProfitLossHistogramChart;
+import charts.HourlyActivityHistogramChart;
 import data.ProviderStats;
 import utils.ChartFactoryUtil;
 import utils.HtmlDatabase;
 import utils.UIStyle;
+import services.ProviderHistoryService;
 
 /**
  * Factory-Klasse zur Erstellung aller Chart-Panels für die Performanceanalyse
@@ -72,8 +76,12 @@ public class ChartsPanelFactory {
                 htmlDatabase.getEquityDrawdown(providerName)
             ),
             createMpddHistoryChart(providerName),
+            createSubscribersHistoryChart(providerName),
             new TradeStackingChart(stats.getTrades()),
             new DurationProfitChart(stats.getTrades()),
+            new TradeDurationHistogramChart(stats.getTrades()),
+            new ProfitLossHistogramChart(stats.getTrades()),
+            new HourlyActivityHistogramChart(stats.getTrades()),
             new EfficiencyChart(stats.getTrades()),
             new WeeklyLotsizeChart(stats.getTrades()),
             new MonthlyTradeCountChart(stats.getTrades()),
@@ -88,8 +96,12 @@ public class ChartsPanelFactory {
             "Drawdown Performance",  // Neuer Titel für das Drawdown-Chart
             "3-Month Profit & Drawdown Analysis",
             "3MPDD History",
+            "Subscribers History",
             "Trade Stacking Analysis",
             "Duration vs Profit Analysis",
+            "Trade Duration Distribution",
+            "Profit/Loss Distribution",
+            "Hourly Activity Distribution",
             "Trading Efficiency Analysis",
             "Weekly Lot Size Analysis",
             "Monthly Trade Count",
@@ -100,7 +112,7 @@ public class ChartsPanelFactory {
         
         // Durchlaufe alle Standard-Charts und füge sie zum Panel hinzu
         for (int i = 0; i < standardCharts.length; i++) {
-            boolean isDurationChart = i == 6; // DurationProfitChart ist jetzt an Position 6
+            boolean isDurationChart = i == 7; // DurationProfitChart ist jetzt an Position 7
             Dimension chartSize = isDurationChart ? 
                     UIStyle.DURATION_CHART_SIZE : UIStyle.DEFAULT_CHART_SIZE;
             
@@ -128,6 +140,15 @@ public class ChartsPanelFactory {
     private static ProviderStatHistoryChart createMpddHistoryChart(String providerName) {
         ProviderStatHistoryChart chart = new ProviderStatHistoryChart();
         chart.loadProviderHistory(providerName);
+        return chart;
+    }
+
+    /**
+     * Erstellt ein Subscribers History Chart
+     */
+    private static ProviderStatHistoryChart createSubscribersHistoryChart(String providerName) {
+        ProviderStatHistoryChart chart = new ProviderStatHistoryChart("Abonnenten-Verlauf", "Anzahl Abonnenten");
+        chart.loadProviderHistory(providerName, ProviderHistoryService.STAT_TYPE_SUBSCRIBERS);
         return chart;
     }
 }

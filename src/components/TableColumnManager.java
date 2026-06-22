@@ -111,10 +111,8 @@ public class TableColumnManager {
                 continue;
             }
             
-            // Wichtige Spalten standardmäßig sichtbar lassen
-            // Aktualisiert für die neue Spalten-Reihenfolge mit Subscribers an Position 3
-            boolean isStandardVisible = (i <= 1) || (i == 3) || (i == 4) || (i == 5) || 
-                                       (i == 9) || (i == 12) || (i == 16) || (i == 21) || (i == 22);
+            boolean isStandardVisible = (i <= 2) || (i == 4) || (i == 5) || (i == 6) || 
+                                       (i == 10) || (i == 13) || (i == 17) || (i == 22) || (i == 23) || (i == 32);
             
             if (!isStandardVisible) {
                 // Spalte verstecken

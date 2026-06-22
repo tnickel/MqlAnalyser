@@ -1,6 +1,7 @@
 package ui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -81,6 +82,7 @@ public class TradeListFrame extends JFrame {
         // Chart Panel im oberen Bereich
         JPanel chartContainer = new JPanel(new BorderLayout());
         chartContainer.setBorder(BorderFactory.createTitledBorder("Open Trades Timeline"));
+        chartPanel.setPreferredSize(new Dimension(500, 400)); // Schön groß machen
         chartContainer.add(chartPanel, BorderLayout.CENTER);
         
         // Detail Panel für konkurrierende Trades
@@ -93,7 +95,7 @@ public class TradeListFrame extends JFrame {
         
         // Haupt-Split Pane
         mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, scrollPane, rightPanel);
-        mainSplitPane.setResizeWeight(0.8); // 80% Breite für die Tabelle
+        mainSplitPane.setResizeWeight(0.6); // 60% Breite für die Tabelle (mehr Platz für das rechte Panel)
 
         // Toolbar
         JToolBar toolBar = new JToolBar();
@@ -110,7 +112,7 @@ public class TradeListFrame extends JFrame {
         
         // Explizites Setzen der initialen Divider-Position
         SwingUtilities.invokeLater(() -> {
-            mainSplitPane.setDividerLocation(0.8);
+            mainSplitPane.setDividerLocation(0.6);
         });
     }
     

@@ -25,7 +25,9 @@ public class TradeChartPanel extends JPanel {
     private List<Trade> trades;
     private LocalDateTime startTime;
     private final int PADDING = 20;
-    private final int ROW_HEIGHT = 30;
+    private final int LEFT_PADDING = 180;
+    private final int RIGHT_PADDING = 20;
+    private final int ROW_HEIGHT = 40;
     private final Color BUY_COLOR = new Color(0, 150, 0);
     private final Color SELL_COLOR = new Color(200, 0, 0);
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -58,7 +60,7 @@ public class TradeChartPanel extends JPanel {
         chartPanel.trades = trades;
         chartPanel.startTime = startTime;
         
-        int preferredHeight = Math.max(300, trades.size() * ROW_HEIGHT + 2 * PADDING);
+        int preferredHeight = Math.max(350, trades.size() * ROW_HEIGHT + 2 * PADDING + 30);
         chartPanel.setPreferredSize(new Dimension(0, preferredHeight));
         
         revalidate();
@@ -134,18 +136,18 @@ public class TradeChartPanel extends JPanel {
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            int width = getWidth() - 2 * PADDING;
-            int height = getHeight() - 2 * PADDING;
+            int chartWidth = getWidth() - LEFT_PADDING - RIGHT_PADDING;
+            int gridHeight = trades.size() * ROW_HEIGHT;
 
-            drawGrid(g2, width, height);
+            drawGrid(g2, chartWidth, gridHeight);
 
             int y = PADDING;
             for (Trade trade : trades) {
-                drawTrade(g2, trade, width, y);
+                drawTrade(g2, trade, chartWidth, y);
                 y += ROW_HEIGHT;
             }
 
-            drawTimeAxis(g2, width, height);
+            drawTimeAxis(g2, chartWidth, gridHeight);
             
             if (hoveredTrade != null) {
                 int hoverY = PADDING + trades.indexOf(hoveredTrade) * ROW_HEIGHT;
@@ -154,7 +156,7 @@ public class TradeChartPanel extends JPanel {
             }
         }
 
-        private void drawGrid(Graphics2D g2, int width, int height) {
+        private void drawGrid(Graphics2D g2, int chartWidth, int gridHeight) {
             g2.setColor(new Color(240, 240, 240));
             
             LocalDateTime earliest = startTime;
@@ -177,17 +179,17 @@ public class TradeChartPanel extends JPanel {
             int markInterval = Math.max(1, timeRange / 10);
 
             for (int i = 0; i <= timeRange; i += markInterval) {
-                int x = PADDING + (int)(i * width / timeRange);
-                g2.drawLine(x, PADDING, x, height + PADDING);
+                int x = LEFT_PADDING + (int)(i * chartWidth / timeRange);
+                g2.drawLine(x, PADDING, x, gridHeight + PADDING);
             }
 
             for (int i = 0; i <= trades.size(); i++) {
                 int y = PADDING + i * ROW_HEIGHT;
-                g2.drawLine(PADDING, y, width + PADDING, y);
+                g2.drawLine(LEFT_PADDING, y, LEFT_PADDING + chartWidth, y);
             }
         }
 
-        private void drawTimeAxis(Graphics2D g2, int width, int height) {
+        private void drawTimeAxis(Graphics2D g2, int chartWidth, int gridHeight) {
             if (startTime == null) return;
             
             g2.setColor(Color.BLACK);
@@ -214,12 +216,12 @@ public class TradeChartPanel extends JPanel {
 
             for (int i = 0; i <= timeRange; i += markInterval) {
                 LocalDateTime markTime = earliest.plusHours(i);
-                int x = PADDING + (int)(i * width / timeRange);
-                g2.drawString(markTime.format(timeFormatter), x - 25, height + PADDING + 15);
+                int x = LEFT_PADDING + (int)(i * chartWidth / timeRange);
+                g2.drawString(markTime.format(timeFormatter), x - 25, gridHeight + PADDING + 15);
             }
         }
 
-        private void drawTrade(Graphics2D g2, Trade trade, int width, int y) {
+        private void drawTrade(Graphics2D g2, Trade trade, int chartWidth, int y) {
             if (startTime == null) return;
             
             // Berechne früheste und späteste Zeit
@@ -244,24 +246,33 @@ public class TradeChartPanel extends JPanel {
             long startDiff = java.time.Duration.between(earliest, trade.getOpenTime()).toMinutes();
             long duration = java.time.Duration.between(trade.getOpenTime(), trade.getCloseTime()).toMinutes();
             
-            int x1 = PADDING + (int)(startDiff * width / totalMinutes);
-            int x2 = PADDING + (int)((startDiff + duration) * width / totalMinutes);
+            int x1 = LEFT_PADDING + (int)(startDiff * chartWidth / totalMinutes);
+            int x2 = LEFT_PADDING + (int)((startDiff + duration) * chartWidth / totalMinutes);
             
             // Minimum-Breite für sehr kurze Trades
-            if (x2 - x1 < 2) x2 = x1 + 2;
+            if (x2 - x1 < 4) x2 = x1 + 4;
             
-            int barHeight = (int)(ROW_HEIGHT * 0.6);
-            barHeight *= (1 + Math.min(1.0, trade.getLots()));
+            int barHeight = (int)(ROW_HEIGHT * 0.5);
+            double scale = 1.0 + Math.min(1.0, trade.getLots());
+            int actualBarHeight = (int)(barHeight * scale);
+            if (actualBarHeight > ROW_HEIGHT - 6) {
+                actualBarHeight = ROW_HEIGHT - 6;
+            }
             
             int yCenter = y + ROW_HEIGHT / 2;
 
             g2.setColor(trade.getType().equalsIgnoreCase("buy") ? BUY_COLOR : SELL_COLOR);
-            g2.fillRect(x1, yCenter - barHeight/2, Math.max(x2 - x1, 2), barHeight);
+            g2.fillRect(x1, yCenter - actualBarHeight/2, Math.max(x2 - x1, 2), actualBarHeight);
             
+            // Dünner Rahmen um den Balken
+            g2.setColor(g2.getColor().darker());
+            g2.drawRect(x1, yCenter - actualBarHeight/2, Math.max(x2 - x1, 2), actualBarHeight);
+            
+            // Symbol und Lot-Größe links
             g2.setColor(Color.BLACK);
-            g2.setFont(new Font("Arial", Font.PLAIN, 11));
-            String tradeInfo = String.format("%s (%s)", trade.getSymbol(), trade.getSignalProvider());
-            g2.drawString(tradeInfo, 5, yCenter + 5);
+            g2.setFont(new Font("SansSerif", Font.BOLD, 12));
+            String tradeInfo = String.format("%s (%.2f Lots)", trade.getSymbol(), trade.getLots());
+            g2.drawString(tradeInfo, 10, yCenter + 5);
         }
 
         @Override
@@ -269,7 +280,7 @@ public class TradeChartPanel extends JPanel {
             if (trades == null || trades.isEmpty()) {
                 return new Dimension(800, 300);
             }
-            return new Dimension(800, trades.size() * ROW_HEIGHT + 2 * PADDING);
+            return new Dimension(800, trades.size() * ROW_HEIGHT + 2 * PADDING + 30);
         }
     }
 }

@@ -29,6 +29,9 @@ public class TradeUtils {
     * Findet die maximale Anzahl gleichzeitig offener Trades
     */
    public static int findMaxConcurrentTrades(List<Trade> trades) {
+       if (trades == null || trades.isEmpty()) {
+           return 0;
+       }
        List<Trade> activeTrades = new ArrayList<>();
        
        // Sortiere alle Trades nach OpenTime
@@ -41,7 +44,7 @@ public class TradeUtils {
            // Entferne zuerst alle Trades die bereits geschlossen wurden
            activeTrades.removeIf(t -> t.getCloseTime().compareTo(trade.getOpenTime()) <= 0);
            
-           // F�ge den neuen Trade hinzu
+           // Fge den neuen Trade hinzu
            activeTrades.add(trade);
            
            // Aktualisiere das Maximum
@@ -55,6 +58,9 @@ public class TradeUtils {
     * Findet die maximale Anzahl gleichzeitig offener Lots
     */
    public static double findMaxConcurrentLots(List<Trade> trades) {
+       if (trades == null || trades.isEmpty()) {
+           return 0.0;
+       }
        List<Trade> activeTrades = new ArrayList<>();
        
        // Sortiere alle Trades nach OpenTime
@@ -67,7 +73,7 @@ public class TradeUtils {
            // Entferne zuerst alle Trades die bereits geschlossen wurden
            activeTrades.removeIf(t -> t.getCloseTime().compareTo(trade.getOpenTime()) <= 0);
            
-           // F�ge den neuen Trade hinzu
+           // Fge den neuen Trade hinzu
            activeTrades.add(trade);
            
            // Berechne aktuelle Lots und aktualisiere Maximum
@@ -81,10 +87,13 @@ public class TradeUtils {
    }
    
    /**
-    * Gibt die Liste der aktiven Trades zu einem bestimmten Zeitpunkt zur�ck
+    * Gibt die Liste der aktiven Trades zu einem bestimmten Zeitpunkt zurck
     */
    public static List<Trade> getActiveTradesAt(List<Trade> trades, LocalDateTime time) {
        List<Trade> activeTrades = new ArrayList<>();
+       if (trades == null || time == null) {
+           return activeTrades;
+       }
        
        for (Trade trade : trades) {
            if (trade.getOpenTime().compareTo(time) <= 0 && 

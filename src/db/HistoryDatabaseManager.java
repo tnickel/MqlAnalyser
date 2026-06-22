@@ -50,6 +50,15 @@ public class HistoryDatabaseManager {
             "last_updated TIMESTAMP, " +
             "FOREIGN KEY (provider_id) REFERENCES signal_providers(provider_id))";
     
+    // Tabelle für Martingale und Grid Analyse
+    private static final String CREATE_PROVIDER_ANALYSIS_TABLE = 
+            "CREATE TABLE IF NOT EXISTS provider_analysis (" +
+            "provider_id INT PRIMARY KEY, " +
+            "is_martingale BOOLEAN DEFAULT FALSE, " +
+            "is_grid BOOLEAN DEFAULT FALSE, " +
+            "last_analyzed TIMESTAMP, " +
+            "FOREIGN KEY (provider_id) REFERENCES signal_providers(provider_id))";
+    
     // Tabelle für gelöschte Einträge
     private static final String CREATE_DELETED_RECORDS_LOG = 
             "CREATE TABLE IF NOT EXISTS deleted_records_log (" +
@@ -161,6 +170,9 @@ public class HistoryDatabaseManager {
             // Tabelle für Provider-Notizen erstellen
             stmt.execute(CREATE_PROVIDER_NOTES_TABLE);
             
+            // Tabelle für Martingale und Grid Analyse erstellen
+            stmt.execute(CREATE_PROVIDER_ANALYSIS_TABLE);
+            
             // Tabelle für gelöschte Einträge erstellen
             stmt.execute(CREATE_DELETED_RECORDS_LOG);
             
@@ -197,7 +209,7 @@ public class HistoryDatabaseManager {
      * Prüft, ob alle erforderlichen Tabellen existieren
      */
     private void checkTables() throws SQLException {
-        String[] tableNames = {"signal_providers", "stat_values", "provider_notes", "deleted_records_log", "db_change_log"};
+        String[] tableNames = {"signal_providers", "stat_values", "provider_notes", "provider_analysis", "deleted_records_log", "db_change_log"};
         boolean allTablesExist = true;
         
         for (String tableName : tableNames) {
@@ -821,13 +833,122 @@ public class HistoryDatabaseManager {
                     }
                 }
             }
-            
             // Keine Risiko-Kategorie gefunden
             return 0;
         } catch (SQLException e) {
             LOGGER.severe("Fehler beim Laden der Risiko-Kategorie: " + e.getMessage());
             e.printStackTrace();
             return 0;
+        }
+    }
+    
+    /**
+     * Klasse für Analyseergebnisse (Martingale und Grid)
+     */
+    public static class AnalysisResult {
+        private final boolean isMartingale;
+        private final boolean isGrid;
+        private final LocalDateTime lastAnalyzed;
+
+        public AnalysisResult(boolean isMartingale, boolean isGrid, LocalDateTime lastAnalyzed) {
+            this.isMartingale = isMartingale;
+            this.isGrid = isGrid;
+            this.lastAnalyzed = lastAnalyzed;
+        }
+
+        public boolean isMartingale() { return isMartingale; }
+        public boolean isGrid() { return isGrid; }
+        public LocalDateTime getLastAnalyzed() { return lastAnalyzed; }
+    }
+
+    /**
+     * Speichert das Analyseergebnis (Martingale / Grid) für einen Signal Provider
+     */
+    public boolean saveProviderAnalysis(String providerName, boolean isMartingale, boolean isGrid) {
+        if (connection == null) {
+            LOGGER.warning("Keine Datenbankverbindung verfügbar");
+            return false;
+        }
+        
+        try {
+            int providerId = getOrCreateProvider(providerName);
+            
+            boolean exists = false;
+            try (PreparedStatement checkStmt = connection.prepareStatement(
+                    "SELECT COUNT(*) FROM provider_analysis WHERE provider_id = ?")) {
+                checkStmt.setInt(1, providerId);
+                ResultSet rs = checkStmt.executeQuery();
+                if (rs.next()) {
+                    exists = rs.getInt(1) > 0;
+                }
+            }
+            
+            String sql = exists ?
+                    "UPDATE provider_analysis SET is_martingale = ?, is_grid = ?, last_analyzed = ? WHERE provider_id = ?" :
+                    "INSERT INTO provider_analysis (provider_id, is_martingale, is_grid, last_analyzed) VALUES (?, ?, ?, ?)";
+            
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                if (exists) {
+                    stmt.setBoolean(1, isMartingale);
+                    stmt.setBoolean(2, isGrid);
+                    stmt.setObject(3, LocalDateTime.now());
+                    stmt.setInt(4, providerId);
+                } else {
+                    stmt.setInt(1, providerId);
+                    stmt.setBoolean(2, isMartingale);
+                    stmt.setBoolean(3, isGrid);
+                    stmt.setObject(4, LocalDateTime.now());
+                }
+                stmt.executeUpdate();
+                
+                logDbChange(exists ? "UPDATE" : "INSERT", "provider_analysis", 
+                        String.format("Analyse (Martingale=%b, Grid=%b) für Provider %s %s", 
+                                isMartingale, isGrid, providerName, exists ? "aktualisiert" : "hinzugefügt"));
+                
+                LOGGER.info("Analyse für Provider " + providerName + " erfolgreich gespeichert");
+                return true;
+            }
+        } catch (SQLException e) {
+            LOGGER.severe("Fehler beim Speichern der Analyse: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Lädt das Analyseergebnis (Martingale / Grid) für einen Signal Provider
+     */
+    public AnalysisResult getProviderAnalysis(String providerName) {
+        if (connection == null) {
+            LOGGER.warning("Keine Datenbankverbindung verfügbar");
+            return null;
+        }
+        
+        try {
+            try (PreparedStatement stmt = connection.prepareStatement(GET_PROVIDER_ID)) {
+                stmt.setString(1, providerName);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    int providerId = rs.getInt(1);
+                    
+                    try (PreparedStatement analysisStmt = connection.prepareStatement(
+                            "SELECT is_martingale, is_grid, last_analyzed FROM provider_analysis WHERE provider_id = ?")) {
+                        analysisStmt.setInt(1, providerId);
+                        ResultSet analysisRs = analysisStmt.executeQuery();
+                        if (analysisRs.next()) {
+                            boolean isMartingale = analysisRs.getBoolean(1);
+                            boolean isGrid = analysisRs.getBoolean(2);
+                            LocalDateTime lastAnalyzed = analysisRs.getObject(3, LocalDateTime.class);
+                            return new AnalysisResult(isMartingale, isGrid, lastAnalyzed);
+                        }
+                    }
+                }
+            }
+            return null;
+        } catch (SQLException e) {
+            LOGGER.severe("Fehler beim Laden der Analyse: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
     }
     

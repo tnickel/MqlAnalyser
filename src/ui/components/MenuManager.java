@@ -1,6 +1,7 @@
 package ui.components;
 
 import java.awt.Color;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -16,6 +17,7 @@ import data.ProviderStats;
 import services.ProviderHistoryService;
 import ui.CompareEquityCurvesDialog;
 import ui.CompareOpenTradesDialog;
+import ui.PortfolioGeneratorDialog;
 import ui.DatabaseViewerDialog;
 import ui.EquityDrawdownDialog;
 import ui.ForceDbSaveDialog;
@@ -75,6 +77,13 @@ public class MenuManager {
             dialog.showDialog();
         });
         
+        // Menüpunkt für Bewertungs-Konfiguration
+        JMenuItem configScoringItem = new JMenuItem("Bewertung konfigurieren");
+        configScoringItem.addActionListener(e -> {
+            ui.ScoreConfigDialog dialog = new ui.ScoreConfigDialog(parentFrame, mainTable);
+            dialog.setVisible(true);
+        });
+        
         // Menüpunkt zum Beenden
         JMenuItem exitItem = new JMenuItem("Beenden");
         exitItem.addActionListener(e -> {
@@ -93,6 +102,7 @@ public class MenuManager {
         
         fileMenu.add(setPathItem);
         fileMenu.add(configColumnsItem);
+        fileMenu.add(configScoringItem);
         fileMenu.addSeparator();
         fileMenu.add(exitItem);
         
@@ -171,8 +181,12 @@ public class MenuManager {
             }
         });
         
+        JMenuItem runAnalysisItem = new JMenuItem("Martingale/Grid-Analyse durchführen");
+        runAnalysisItem.addActionListener(e -> runMartingaleGridAnalysis(true));
+        
         dbMenu.add(viewDbItem);
         dbMenu.add(forceDbSaveItem);
+        dbMenu.add(runAnalysisItem);
         dbMenu.add(backupDbItem);
         
         // Ansicht-Menü
@@ -214,6 +228,20 @@ public class MenuManager {
         viewMenu.add(showEquityDrawdownItem); // Neuer Menüpunkt hinzugefügt
         viewMenu.add(showSignalProvidersItem);
         viewMenu.add(compareOpenTradesItem);
+        
+        // Menüpunkt für Portfolio Generator (NEUER MENÜPUNKT)
+        JMenuItem portfolioGeneratorItem = new JMenuItem("Optimales Portfolio erstellen");
+        portfolioGeneratorItem.addActionListener(e -> {
+            PortfolioGeneratorDialog dialog = new PortfolioGeneratorDialog(
+                parentFrame,
+                mainTable.getCurrentProviderStats(),
+                mainTable.getHtmlDatabase(),
+                mainTable,
+                rootPath
+            );
+            dialog.setVisible(true);
+        });
+        viewMenu.add(portfolioGeneratorItem);
         
         // Debug-Menü (ERWEITERT)
         JMenu debugMenu = new JMenu("Debug");
@@ -380,5 +408,25 @@ public class MenuManager {
             rootPath
         );
         dialog.setVisible(true);
+    }
+
+    public void runMartingaleGridAnalysis(boolean force) {
+        Map<String, ProviderStats> allStats = dataManager.getStats();
+        List<String> list;
+        if (force) {
+            list = new java.util.ArrayList<>(allStats.keySet());
+        } else {
+            list = historyService.getProvidersNeedingAnalysis(allStats);
+        }
+        
+        if (!list.isEmpty()) {
+            ui.AnalysisProgressDialog dialog = new ui.AnalysisProgressDialog(
+                parentFrame, 
+                list, 
+                allStats, 
+                () -> mainTable.forceCompleteReinitialize()
+            );
+            dialog.setVisible(true);
+        }
     }
 }

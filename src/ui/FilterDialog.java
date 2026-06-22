@@ -35,12 +35,12 @@ public class FilterDialog extends JDialog {
     };
     
     private static final String[] TABLE_COLUMNS = {
-    	    "No.", "Signal Provider", "Balance", "Subscribers", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
-    	    "3MProfProz", "Trades", "Trade Days", "Days", "Win Rate %", "Total Profit", 
-    	    "Avg Profit/Trade", "Max Drawdown %", "Equity Drawdown %", 
-    	    "Profit Factor", "MaxTrades", "MaxLots", "Max Duration (h)", "Risiko",
-    	    "Risk Score", "S/L", "T/P", "Start Date", "End Date", "Stabilitaet", "Steigung", "MaxDDGraphic"
-    	};
+        "No.", "Signal Provider", "Score", "Balance", "Subscribers", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
+        "3MProfProz", "Trades", "Trade Days", "Days", "Win Rate %", "Total Profit", 
+        "Avg Profit/Trade", "Max Drawdown %", "Equity Drawdown %", "Profit Factor", 
+        "MaxTrades", "MaxLots", "Max Duration (h)", "Risiko", "Risk Score", "S/L", "T/P", 
+        "Start Date", "End Date", "Stabilitaet", "Steigung", "MaxDDGraphic", "EquityDrawdown3M%", "M/G"
+    };
 
     public FilterDialog(JFrame parent, FilterCriteria filters) {
         super(parent, "Filter Settings", true);
@@ -133,10 +133,12 @@ public class FilterDialog extends JDialog {
                     String value = textField.getText().trim();
                     if (!value.isEmpty()) {
                         int row = filterTable.getEditingRow();
-                        String rowName = (String) filterTable.getValueAt(row, 0);
-                        
-                        if (!("Signal Provider".equals(rowName) || "Start Date".equals(rowName) || "End Date".equals(rowName))) {  // Nicht für Text-Spalten
-                            Double.parseDouble(value);
+                        if (row != -1) {
+                            String rowName = (String) filterTable.getValueAt(row, 0);
+                            
+                            if (!("Signal Provider".equals(rowName) || "Start Date".equals(rowName) || "End Date".equals(rowName))) {  // Nicht für Text-Spalten
+                                Double.parseDouble(value);
+                            }
                         }
                     }
                     return super.stopCellEditing();

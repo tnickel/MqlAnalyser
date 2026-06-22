@@ -167,13 +167,41 @@ public class ProviderStats {
     }
     
     public LocalDate getStartDate() {
-        return trades.isEmpty() ? LocalDate.now() : 
-               trades.get(0).getOpenTime().toLocalDate();
+        if (trades.isEmpty()) return LocalDate.now();
+        LocalDate minDate = LocalDate.MAX;
+        for (Trade t : trades) {
+            LocalDate d = t.getOpenTime().toLocalDate();
+            if (d.isBefore(minDate)) {
+                minDate = d;
+            }
+        }
+        return minDate;
     }
     
     public LocalDate getEndDate() {
-        return trades.isEmpty() ? LocalDate.now() : 
-               trades.get(trades.size() - 1).getCloseTime().toLocalDate();
+        if (trades.isEmpty()) return LocalDate.now();
+        LocalDate maxDate = LocalDate.MIN;
+        for (Trade t : trades) {
+            LocalDate d = t.getCloseTime().toLocalDate();
+            if (d.isAfter(maxDate)) {
+                maxDate = d;
+            }
+        }
+        return maxDate;
+    }
+
+    /**
+     * Sorts the trades list chronologically by close time and updates the profits list accordingly.
+     */
+    public void sortTradesChronologically() {
+        if (trades == null || trades.isEmpty()) {
+            return;
+        }
+        trades.sort((t1, t2) -> t1.getCloseTime().compareTo(t2.getCloseTime()));
+        profits.clear();
+        for (Trade t : trades) {
+            profits.add(t.getProfit());
+        }
     }
     
     public boolean hasStopLoss() {

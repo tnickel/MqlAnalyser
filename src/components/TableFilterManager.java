@@ -78,36 +78,47 @@ public class TableFilterManager {
             @Override
             protected Map<String, ProviderStats> doInBackground() throws Exception {
                 Map<String, ProviderStats> stats = dataManager.getStats();
-                List<Map.Entry<String, ProviderStats>> entries = new ArrayList<>(stats.entrySet());
                 Map<String, ProviderStats> result = new java.util.HashMap<>();
                 
-                int total = entries.size();
-                for (int i = 0; i < total; i++) {
-                    Map.Entry<String, ProviderStats> entry = entries.get(i);
+                final List<Object[]> allRows = new ArrayList<>();
+                final List<String> providerNames = new ArrayList<>();
+                
+                // Befülle das TableModel einmalig auf dem EDT, um korrekte Normalisierung zu erhalten
+                SwingUtilities.invokeAndWait(() -> {
+                    tableModel.setRowCount(0);
+                    tableModel.populateData(stats);
                     
-                    // Für den Fortschritt
+                    // Extrahiere alle Zeilendaten
+                    for (int row = 0; row < tableModel.getRowCount(); row++) {
+                        String providerName = (String) tableModel.getValueAt(row, 1);
+                        providerNames.add(providerName);
+                        
+                        Object[] rowData = new Object[tableModel.getColumnCount()];
+                        for (int col = 0; col < tableModel.getColumnCount(); col++) {
+                            rowData[col] = tableModel.getValueAt(row, col);
+                        }
+                        allRows.add(rowData);
+                    }
+                });
+                
+                int total = allRows.size();
+                for (int i = 0; i < total; i++) {
                     int progress = (i * 100) / total;
                     publish(progress);
                     
-                    // Hole die tatsächlichen Werte durch temporäres Befüllen der Tabelle
-                    tableModel.setRowCount(0);
-                    tableModel.populateData(Map.of(entry.getKey(), entry.getValue()));
+                    String providerName = providerNames.get(i);
+                    Object[] rowData = allRows.get(i);
+                    ProviderStats pStats = stats.get(providerName);
                     
-                    // Extrahiere die Werte aus der ersten (und einzigen) Zeile
-                    Object[] rowData = new Object[tableModel.getColumnCount()];
-                    for (int j = 0; j < tableModel.getColumnCount(); j++) {
-                        rowData[j] = tableModel.getValueAt(0, j);
-                    }
-                    
-                    // Prüfe ob die Werte dem Filter entsprechen
-                    boolean matches = currentFilter.matches(entry.getValue(), rowData);
+                    boolean matches = currentFilter.matches(pStats, rowData);
                     if (matches) {
-                        result.put(entry.getKey(), entry.getValue());
+                        result.put(providerName, pStats);
                     }
                     
-                    final int currentIndex = i; // Neue finale Variable für den Lambda-Ausdruck
+                    final int currentIndex = i;
+                    final String currentName = providerName;
                     SwingUtilities.invokeLater(() -> {
-                        progressDialog.setStatus("Verarbeite Provider: " + entry.getKey() + 
+                        progressDialog.setStatus("Verarbeite Provider: " + currentName + 
                                                " (" + (currentIndex+1) + "/" + total + ")");
                     });
                 }
@@ -117,7 +128,6 @@ public class TableFilterManager {
             
             @Override
             protected void process(List<Integer> chunks) {
-                // Update progress bar with the latest value
                 if (!chunks.isEmpty()) {
                     int latestProgress = chunks.get(chunks.size() - 1);
                     progressDialog.setProgress(latestProgress);
@@ -128,10 +138,9 @@ public class TableFilterManager {
             protected void done() {
                 try {
                     Map<String, ProviderStats> filteredStats = get();
-                    // Zeige die gefilterten Daten an
                     tableModel.populateData(filteredStats);
                     mainTable.updateStatus();
-                    mainTable.repaint(); // Wichtig: Tabelle neu zeichnen
+                    mainTable.repaint();
                     progressDialog.complete();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -140,43 +149,48 @@ public class TableFilterManager {
             }
         };
         
-        // Starte den Worker und zeige den Dialog
         worker.execute();
         progressDialog.setVisible(true);
     }
 
     public void refreshFilteredData() {
-        // Für kleine Datenmengen oder programmatische Aufrufe ohne Fortschrittsanzeige
+        Map<String, ProviderStats> stats = dataManager.getStats();
+        
+        tableModel.setRowCount(0);
+        tableModel.populateData(stats);
+        
         if (currentFilter == null) {
-            tableModel.populateData(dataManager.getStats());
-            mainTable.repaint(); // Wichtig: Tabelle neu zeichnen
-        } else {
-            Map<String, ProviderStats> filteredStats = dataManager.getStats().entrySet().stream()
-                .filter(entry -> {
-                    // Hole die tatsächlichen Werte durch temporäres Befüllen der Tabelle
-                    tableModel.setRowCount(0);
-                    tableModel.populateData(Map.of(entry.getKey(), entry.getValue()));
-                    
-                    // Extrahiere die Werte aus der ersten (und einzigen) Zeile
-                    Object[] rowData = new Object[tableModel.getColumnCount()];
-                    for (int i = 0; i < tableModel.getColumnCount(); i++) {
-                        rowData[i] = tableModel.getValueAt(0, i);
-                    }
-                    
-                    // Prüfe ob die Werte dem Filter entsprechen
-                    boolean matches = currentFilter.matches(entry.getValue(), rowData);
-                    return matches;
-                })
-                .collect(Collectors.toMap(
-                    Map.Entry::getKey,
-                    Map.Entry::getValue
-                ));
-                
-            // Zeige die gefilterten Daten an
-            tableModel.populateData(filteredStats);
-            mainTable.repaint(); // Wichtig: Tabelle neu zeichnen
+            mainTable.updateStatus();
+            mainTable.repaint();
+            return;
         }
+        
+        Map<String, ProviderStats> result = new java.util.HashMap<>();
+        List<Object[]> matchedRows = new ArrayList<>();
+        
+        for (int row = 0; row < tableModel.getRowCount(); row++) {
+            String providerName = (String) tableModel.getValueAt(row, 1);
+            Object[] rowData = new Object[tableModel.getColumnCount()];
+            for (int col = 0; col < tableModel.getColumnCount(); col++) {
+                rowData[col] = tableModel.getValueAt(row, col);
+            }
+            
+            ProviderStats pStats = stats.get(providerName);
+            if (pStats != null && currentFilter.matches(pStats, rowData)) {
+                result.put(providerName, pStats);
+                matchedRows.add(rowData);
+            }
+        }
+        
+        tableModel.setRowCount(0);
+        int num = 1;
+        for (Object[] row : matchedRows) {
+            row[0] = num++;
+            tableModel.addRow(row);
+        }
+        
         mainTable.updateStatus();
+        mainTable.repaint();
     }
 
     /**

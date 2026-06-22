@@ -18,11 +18,11 @@ import utils.HtmlDatabase;
 public class HighlightTableModel extends DefaultTableModel {
   
 	private static final String[] COLUMN_NAMES = {
-		    "No.", "Signal Provider", "Balance", "Subscribers", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
+		    "No.", "Signal Provider", "Score", "Balance", "Subscribers", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
 		    "3MProfProz", "Trades", "Trade Days", "Days", "Win Rate %", "Total Profit", 
 		    "Avg Profit/Trade", "Max Drawdown %", "Equity Drawdown %", "Profit Factor", 
 		    "MaxTrades", "MaxLots", "Max Duration (h)", "Risiko", "Risk Score", "S/L", "T/P", 
-		    "Start Date", "End Date", "Stabilitaet", "Steigung", "MaxDDGraphic", "EquityDrawdown3M%"
+		    "Start Date", "End Date", "Stabilitaet", "Steigung", "MaxDDGraphic", "EquityDrawdown3M%", "M/G"
 		};
 
   
@@ -46,37 +46,82 @@ public class HighlightTableModel extends DefaultTableModel {
 
   
 
+  private double cachedMinTrades = 0.0;
+  private double cachedMaxTrades = 1.0;
+  private double cachedMinTradeDays = 0.0;
+  private double cachedMaxTradeDays = 1.0;
+  private double cachedMinMpdd3 = 0.0;
+  private double cachedMaxMpdd3 = 1.0;
+  private double cachedMinEd = 0.0;
+  private double cachedMaxEd = 1.0;
+  private double cachedMinSubscribers = 0.0;
+  private double cachedMaxSubscribers = 1.0;
+  private double cachedMinMonthlyProfit = 0.0;
+  private double cachedMaxMonthlyProfit = 1.0;
+
+  private double normalize(double val, double min, double max, boolean higherIsBetter) {
+      if (max <= min) {
+          return 50.0;
+      }
+      double norm;
+      if (higherIsBetter) {
+          norm = (val - min) / (max - min) * 100.0;
+      } else {
+          norm = (max - val) / (max - min) * 100.0;
+      }
+      return Math.max(0.0, Math.min(100.0, norm));
+  }
+
+  private static class ProviderMetrics {
+      final double trades;
+      final double tradeDays;
+      final double mpdd3;
+      final double equityDrawdown;
+      final double subscribers;
+      final double avgMonthlyProfit;
+
+      ProviderMetrics(double trades, double tradeDays, double mpdd3, double equityDrawdown, double subscribers, double avgMonthlyProfit) {
+          this.trades = trades;
+          this.tradeDays = tradeDays;
+          this.mpdd3 = mpdd3;
+          this.equityDrawdown = equityDrawdown;
+          this.subscribers = subscribers;
+          this.avgMonthlyProfit = avgMonthlyProfit;
+      }
+  }
+
   @Override
   public Class<?> getColumnClass(int columnIndex) {
       switch (columnIndex) {
           case 0:  // No
-          case 3:  // Subscribers
-          case 9:  // Trades
-          case 10: // Trade Days
-          case 11: // Days
-          case 18: // MaxTrades
-          case 20: // Max Duration
-          case 22: // Risk Score
-          case 23: // S/L
-          case 24: // T/P
+          case 4:  // Subscribers
+          case 10: // Trades
+          case 11: // Trade Days
+          case 12: // Days
+          case 19: // MaxTrades
+          case 21: // Max Duration
+          case 23: // Risk Score
+          case 24: // S/L
+          case 25: // T/P
               return Integer.class;
-          case 2:  // Balance
-          case 4:  // 3MPDD
-          case 5:  // 6MPDD
-          case 6:  // 9MPDD
-          case 7:  // 12MPDD
-          case 8:  // 3MProfProz
-          case 12: // Win Rate
-          case 13: // Total Profit
-          case 14: // Avg Profit/Trade
-          case 15: // Max Drawdown
-          case 16: // Equity Drawdown
-          case 17: // Profit Factor
-          case 19: // MaxLots
-          case 27: // Stabilität
-          case 28: // Steigung
-          case 29: // MaxDDGraphic
-          case 30: // EquityDrawdown3M%
+          case 2:  // Score
+          case 3:  // Balance
+          case 5:  // 3MPDD
+          case 6:  // 6MPDD
+          case 7:  // 9MPDD
+          case 8:  // 12MPDD
+          case 9:  // 3MProfProz
+          case 13: // Win Rate
+          case 14: // Total Profit
+          case 15: // Avg Profit/Trade
+          case 16: // Max Drawdown
+          case 17: // Equity Drawdown
+          case 18: // Profit Factor
+          case 20: // MaxLots
+          case 28: // Stabilität
+          case 29: // Steigung
+          case 30: // MaxDDGraphic
+          case 31: // EquityDrawdown3M%
               return Double.class;
           default:
               return String.class;
@@ -175,15 +220,107 @@ public class HighlightTableModel extends DefaultTableModel {
 	    setRowCount(0);
 	    int rowNum = 1;
 
+	    // Pass 1: Gather metrics to calculate min/max for normalization
+	    cachedMinTrades = Double.MAX_VALUE; cachedMaxTrades = -Double.MAX_VALUE;
+	    cachedMinTradeDays = Double.MAX_VALUE; cachedMaxTradeDays = -Double.MAX_VALUE;
+	    cachedMinMpdd3 = Double.MAX_VALUE; cachedMaxMpdd3 = -Double.MAX_VALUE;
+	    cachedMinEd = Double.MAX_VALUE; cachedMaxEd = -Double.MAX_VALUE;
+	    cachedMinSubscribers = Double.MAX_VALUE; cachedMaxSubscribers = -Double.MAX_VALUE;
+	    cachedMinMonthlyProfit = Double.MAX_VALUE; cachedMaxMonthlyProfit = -Double.MAX_VALUE;
+
+	    java.util.Map<String, ProviderMetrics> metricsCache = new java.util.HashMap<>();
+
+	    for (Map.Entry<String, ProviderStats> entry : statsMap.entrySet()) {
+	        String providerName = entry.getKey();
+	        ProviderStats stats = entry.getValue();
+
+	        double equityDrawdown = htmlDatabase.getEquityDrawdown(providerName);
+	        int subscribers = htmlDatabase.getSubscribers(providerName);
+	        double threeMonthProfit = htmlDatabase.getAverageMonthlyProfit(providerName, 3);
+	        double mpdd3 = calculateMPDD(threeMonthProfit, equityDrawdown);
+
+	        double trades = stats.getTrades().size();
+	        double tradeDays = stats.getTradeDays();
+
+	        // Calculate average monthly profit % over entire lifetime
+	        Map<String, Double> monthlyProfits = htmlDatabase.getMonthlyProfitPercentages(providerName);
+	        double avgMonthlyProfit = 0.0;
+	        if (!monthlyProfits.isEmpty()) {
+	            double sum = 0.0;
+	            for (double val : monthlyProfits.values()) {
+	                sum += val;
+	            }
+	            avgMonthlyProfit = sum / monthlyProfits.size();
+	        }
+
+	        ProviderMetrics metrics = new ProviderMetrics(trades, tradeDays, mpdd3, equityDrawdown, subscribers, avgMonthlyProfit);
+	        metricsCache.put(providerName, metrics);
+
+	        cachedMinTrades = Math.min(cachedMinTrades, trades);
+	        cachedMaxTrades = Math.max(cachedMaxTrades, trades);
+
+	        cachedMinTradeDays = Math.min(cachedMinTradeDays, tradeDays);
+	        cachedMaxTradeDays = Math.max(cachedMaxTradeDays, tradeDays);
+
+	        cachedMinMpdd3 = Math.min(cachedMinMpdd3, mpdd3);
+	        cachedMaxMpdd3 = Math.max(cachedMaxMpdd3, mpdd3);
+
+	        cachedMinEd = Math.min(cachedMinEd, equityDrawdown);
+	        cachedMaxEd = Math.max(cachedMaxEd, equityDrawdown);
+
+	        cachedMinSubscribers = Math.min(cachedMinSubscribers, subscribers);
+	        cachedMaxSubscribers = Math.max(cachedMaxSubscribers, subscribers);
+
+	        cachedMinMonthlyProfit = Math.min(cachedMinMonthlyProfit, avgMonthlyProfit);
+	        cachedMaxMonthlyProfit = Math.max(cachedMaxMonthlyProfit, avgMonthlyProfit);
+	    }
+
+	    // Get score configuration weights
+	    utils.ScoreConfig scoreConfig = utils.ScoreConfig.getInstance();
+	    double wProfit = scoreConfig.getWeightProfit();
+	    double w3Mpdd = scoreConfig.getWeight3Mpdd();
+	    double wDrawdown = scoreConfig.getWeightDrawdown();
+	    double wTrades = scoreConfig.getWeightTrades();
+	    double wTradeDays = scoreConfig.getWeightTradeDays();
+	    double wSubscribers = scoreConfig.getWeightSubscribers();
+	    double totalWeight = wProfit + w3Mpdd + wDrawdown + wTrades + wTradeDays + wSubscribers;
+
+	    // Pass 2: Calculate scores and populate rows
 	    for (Map.Entry<String, ProviderStats> entry : statsMap.entrySet()) {
 	        String providerName = entry.getKey();
 	        ProviderStats stats = entry.getValue();
 	        
-		        double equityDrawdown = htmlDatabase.getEquityDrawdown(providerName);
+	        ProviderMetrics metrics = metricsCache.get(providerName);
+	        
+	        double score = 0.0;
+	        if (totalWeight > 0 && metrics != null) {
+	            double scoreT = normalize(metrics.trades, cachedMinTrades, cachedMaxTrades, true);
+	            double scoreD = normalize(metrics.tradeDays, cachedMinTradeDays, cachedMaxTradeDays, true);
+	            double scoreM = normalize(metrics.mpdd3, cachedMinMpdd3, cachedMaxMpdd3, true);
+	            double scoreED = normalize(metrics.equityDrawdown, cachedMinEd, cachedMaxEd, false); // Lower is better
+	            
+	            double scoreS = 0.0;
+	            if (metrics.subscribers > 0) {
+	                if (metrics.subscribers == 1) {
+	                    scoreS = 20.0;
+	                } else {
+	                    scoreS = 50.0 + normalize(metrics.subscribers, 2, cachedMaxSubscribers, true) * 0.5;
+	                }
+	            }
+	            
+	            double scoreP = 0.0;
+	            if (metrics.avgMonthlyProfit > 0.0) {
+	                scoreP = normalize(metrics.avgMonthlyProfit, 0.0, cachedMaxMonthlyProfit, true);
+	            }
+
+	            score = (wProfit * scoreP + w3Mpdd * scoreM + wDrawdown * scoreED + wTrades * scoreT + wTradeDays * scoreD + wSubscribers * scoreS) / totalWeight;
+	        }
+	        
+	        double equityDrawdown = htmlDatabase.getEquityDrawdown(providerName);
 	        double balance = htmlDatabase.getBalance(providerName);
 	        int subscribers = htmlDatabase.getSubscribers(providerName);
 	        double maxDDGraphic = htmlDatabase.getEquityDrawdownGraphic(providerName);
-            double equityDrawdown3M = htmlDatabase.getMaxDrawdown3M(providerName); // Neue Spalte
+	        double equityDrawdown3M = htmlDatabase.getMaxDrawdown3M(providerName);
 	        
 	        // Berechne MPDD für verschiedene Zeiträume und aktualisiere die Tooltips
 	        htmlDatabase.getMPDD(providerName, 3);  
@@ -205,6 +342,21 @@ public class HighlightTableModel extends DefaultTableModel {
 	        // Risiko-Kategorie aus der Datenbank laden
 	        int riskCategory = dbManager.getProviderRiskCategory(providerName);
 	        stats.setRiskCategory(riskCategory);
+	        
+	        // Martingale/Grid-Analyse laden
+	        HistoryDatabaseManager.AnalysisResult analysis = dbManager.getProviderAnalysis(providerName);
+	        String mgType = "-";
+	        if (analysis != null) {
+	            boolean isM = analysis.isMartingale();
+	            boolean isG = analysis.isGrid();
+	            if (isM && isG) {
+	                mgType = "MG";
+	            } else if (isM) {
+	                mgType = "M";
+	            } else if (isG) {
+	                mgType = "G";
+	            }
+	        }
 	        
 	        int riskScore = RiskAnalysisServ.calculateRiskScore(stats);
 	        double stabilitaet = htmlDatabase.getStabilitaetswert(providerName);
@@ -234,6 +386,7 @@ public class HighlightTableModel extends DefaultTableModel {
 	        addRow(new Object[]{
 	            rowNum++, 
 	            providerName, 
+	            score,
 	            balance,
 	            subscribers,
 	            mpdd3,
@@ -262,7 +415,8 @@ public class HighlightTableModel extends DefaultTableModel {
 	            stabilitaet,
 	            steigung,
 	            maxDDGraphic,
-                equityDrawdown3M // Neue Spalte
+	            equityDrawdown3M,
+	            mgType
 	        });
 	    }
 	    fireTableDataChanged();
@@ -273,7 +427,7 @@ public class HighlightTableModel extends DefaultTableModel {
 	    double balance = htmlDatabase.getBalance(providerName);
 	    int subscribers = htmlDatabase.getSubscribers(providerName);
 	    double maxDDGraphic = htmlDatabase.getEquityDrawdownGraphic(providerName);
-        double equityDrawdown3M = htmlDatabase.getMaxDrawdown3M(providerName); // Neue Spalte
+	    double equityDrawdown3M = htmlDatabase.getMaxDrawdown3M(providerName);
 	    
 	    // Berechne MPDD für verschiedene Zeiträume
 	    double threeMonthProfit = htmlDatabase.getAverageMonthlyProfit(providerName, 3);
@@ -285,15 +439,77 @@ public class HighlightTableModel extends DefaultTableModel {
 	    double mpdd6 = calculateMPDD(sixMonthProfit, equityDrawdown);
 	    double mpdd9 = calculateMPDD(nineMonthProfit, equityDrawdown);
 	    double mpdd12 = calculateMPDD(twelveMonthProfit, equityDrawdown);
+
+	    double trades = stats.getTrades().size();
+	    double tradeDays = stats.getTradeDays();
+
+	    // Calculate average monthly profit % over entire lifetime
+	    Map<String, Double> monthlyProfits = htmlDatabase.getMonthlyProfitPercentages(providerName);
+	    double avgMonthlyProfit = 0.0;
+	    if (!monthlyProfits.isEmpty()) {
+	        double sum = 0.0;
+	        for (double val : monthlyProfits.values()) {
+	            sum += val;
+	        }
+	        avgMonthlyProfit = sum / monthlyProfits.size();
+	    }
+
+	    // Get score configuration weights
+	    utils.ScoreConfig scoreConfig = utils.ScoreConfig.getInstance();
+	    double wProfit = scoreConfig.getWeightProfit();
+	    double w3Mpdd = scoreConfig.getWeight3Mpdd();
+	    double wDrawdown = scoreConfig.getWeightDrawdown();
+	    double wTrades = scoreConfig.getWeightTrades();
+	    double wTradeDays = scoreConfig.getWeightTradeDays();
+	    double wSubscribers = scoreConfig.getWeightSubscribers();
+	    double totalWeight = wProfit + w3Mpdd + wDrawdown + wTrades + wTradeDays + wSubscribers;
+
+	    double score = 0.0;
+	    if (totalWeight > 0) {
+	        double scoreT = normalize(trades, cachedMinTrades, cachedMaxTrades, true);
+	        double scoreD = normalize(tradeDays, cachedMinTradeDays, cachedMaxTradeDays, true);
+	        double scoreM = normalize(mpdd3, cachedMinMpdd3, cachedMaxMpdd3, true);
+	        double scoreED = normalize(equityDrawdown, cachedMinEd, cachedMaxEd, false);
+	        
+	        double scoreS = 0.0;
+	        if (subscribers > 0) {
+	            if (subscribers == 1) {
+	                scoreS = 20.0;
+	            } else {
+	                scoreS = 50.0 + normalize(subscribers, 2, cachedMaxSubscribers, true) * 0.5;
+	            }
+	        }
+	        
+	        double scoreP = 0.0;
+	        if (avgMonthlyProfit > 0.0) {
+	            scoreP = normalize(avgMonthlyProfit, 0.0, cachedMaxMonthlyProfit, true);
+	        }
+
+	        score = (wProfit * scoreP + w3Mpdd * scoreM + wDrawdown * scoreED + wTrades * scoreT + wTradeDays * scoreD + wSubscribers * scoreS) / totalWeight;
+	    }
 	    
 	    // Risiko-Kategorie aus der Datenbank laden
 	    int riskCategory = dbManager.getProviderRiskCategory(providerName);
 	    stats.setRiskCategory(riskCategory);
 	    
+	    // Martingale/Grid-Analyse laden
+	    HistoryDatabaseManager.AnalysisResult analysis = dbManager.getProviderAnalysis(providerName);
+	    String mgType = "-";
+	    if (analysis != null) {
+	        boolean isM = analysis.isMartingale();
+	        boolean isG = analysis.isGrid();
+	        if (isM && isG) {
+	            mgType = "MG";
+	        } else if (isM) {
+	            mgType = "M";
+	        } else if (isG) {
+	            mgType = "G";
+	        }
+	    }
+	    
 	    int riskScore = RiskAnalysisServ.calculateRiskScore(stats);
 	    double stabilitaet = htmlDatabase.getStabilitaetswert(providerName);
 	    
-	    Map<String, Double> monthlyProfits = htmlDatabase.getMonthlyProfitPercentages(providerName);
 	    double steigung = 0.0;
 	    
 	    // Währungspaare für Tooltips sammeln
@@ -321,6 +537,7 @@ public class HighlightTableModel extends DefaultTableModel {
 	    return new Object[]{
 	        0, // Platzhalter für die Nummer
 	        providerName,
+	        score,
 	        balance,
 	        subscribers,
 	        mpdd3,
@@ -349,7 +566,8 @@ public class HighlightTableModel extends DefaultTableModel {
 	        stabilitaet,
 	        steigung,
 	        maxDDGraphic,
-            equityDrawdown3M // Neue Spalte
+	        equityDrawdown3M,
+	        mgType
 	    };
 	}
 	

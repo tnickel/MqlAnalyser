@@ -450,6 +450,29 @@ public class ReportGenerator {
         String riskCategoryHtml = formatRiskCategoryInfo(riskCategory);
         htmlBuilder.append("<tr><td>Risikoklasse</td><td>").append(riskCategoryHtml).append("</td></tr>\n");
         
+        // Martingale / Grid Typ ausgeben
+        HistoryDatabaseManager.AnalysisResult analysis = historyDbManager.getProviderAnalysis(providerName);
+        if (analysis == null && !providerName.endsWith(".csv")) {
+            analysis = historyDbManager.getProviderAnalysis(providerName + ".csv");
+        }
+        if (analysis == null && providerName.endsWith(".csv")) {
+            analysis = historyDbManager.getProviderAnalysis(providerName.substring(0, providerName.length() - 4));
+        }
+        
+        String classificationText = "Keine Besonderheiten (-)";
+        if (analysis != null) {
+            boolean isM = analysis.isMartingale();
+            boolean isG = analysis.isGrid();
+            if (isM && isG) {
+                classificationText = "Martingale & Grid";
+            } else if (isM) {
+                classificationText = "Martingale";
+            } else if (isG) {
+                classificationText = "Grid";
+            }
+        }
+        htmlBuilder.append("<tr><td>Strategietyp</td><td>").append(classificationText).append("</td></tr>\n");
+        
         htmlBuilder.append("</table>\n");
         htmlBuilder.append("</div>\n");
         

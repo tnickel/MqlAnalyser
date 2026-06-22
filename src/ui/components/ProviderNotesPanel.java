@@ -8,6 +8,7 @@ import java.awt.Font;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -43,6 +44,40 @@ public class ProviderNotesPanel extends JPanel {
         setLayout(new BorderLayout(5, 5));
         setBackground(UIConstants.BG_COLOR);
         setBorder(BorderFactory.createTitledBorder("Notizen zum Signal Provider"));
+        
+        // Martingale/Grid-Analyse aus der DB laden
+        db.HistoryDatabaseManager.AnalysisResult analysis = db.HistoryDatabaseManager.getInstance().getProviderAnalysis(providerName);
+        if (analysis == null && !providerName.endsWith(".csv")) {
+            analysis = db.HistoryDatabaseManager.getInstance().getProviderAnalysis(providerName + ".csv");
+        }
+        if (analysis == null && providerName.endsWith(".csv")) {
+            analysis = db.HistoryDatabaseManager.getInstance().getProviderAnalysis(providerName.substring(0, providerName.length() - 4));
+        }
+        
+        String classificationText = "Keine Besonderheiten (-)";
+        if (analysis != null) {
+            boolean isM = analysis.isMartingale();
+            boolean isG = analysis.isGrid();
+            if (isM && isG) {
+                classificationText = "Martingale & Grid";
+            } else if (isM) {
+                classificationText = "Martingale";
+            } else if (isG) {
+                classificationText = "Grid";
+            }
+        }
+        
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setBackground(UIConstants.BG_COLOR);
+        JLabel typeLabel = new JLabel("Erkannter Strategietyp: " + classificationText);
+        typeLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        if (analysis != null && (analysis.isMartingale() || analysis.isGrid())) {
+            typeLabel.setForeground(new Color(180, 0, 0));
+        } else {
+            typeLabel.setForeground(UIConstants.TEXT_COLOR);
+        }
+        topPanel.add(typeLabel);
+        add(topPanel, BorderLayout.NORTH);
         
         // Textfeld für Notizen erstellen
         notesTextArea = new JTextArea();

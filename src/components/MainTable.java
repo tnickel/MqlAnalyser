@@ -187,7 +187,7 @@ public class MainTable extends JTable {
                 getColumnModel().getColumn(i).setCellRenderer(riskRenderer);
             }
             // Spalte No und Signal Provider verwenden den Standard-Renderer
-            else if ("No.".equals(columnName) || "Signal Provider".equals(columnName)) {
+            else if ("No.".equals(columnName) || "Signal Provider".equals(columnName) || "M/G".equals(columnName)) {
                 getColumnModel().getColumn(i).setCellRenderer(renderer);
             }
             // Alle anderen Spalten sind numerisch und verwenden den NumberFormatRenderer

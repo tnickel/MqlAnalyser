@@ -88,8 +88,8 @@ public class TableTooltipManager {
             return createProviderTooltip(value.toString());
         }
         
-        // Für MPDD-Spalten (4, 5, 6, 7) spezielle Tooltips verwenden
-        if (modelColumn >= 4 && modelColumn <= 7) {
+        // Für MPDD-Spalten (5, 6, 7, 8) spezielle Tooltips verwenden
+        if (modelColumn >= 5 && modelColumn <= 8) {
             return createMPDDTooltip(modelRow, modelColumn);
         }
         
@@ -121,9 +121,9 @@ public class TableTooltipManager {
         
         // Monatsanzahl aus der Spalte ableiten (3, 6, 9, 12 Monate)
         int months = 3;
-        if (modelColumn == 5) months = 6;
-        else if (modelColumn == 6) months = 9;
-        else if (modelColumn == 7) months = 12;
+        if (modelColumn == 6) months = 6;
+        else if (modelColumn == 7) months = 9;
+        else if (modelColumn == 8) months = 12;
         
         // Den HTML-Tooltip von der HtmlDatabase abrufen
         String mpddTooltip = htmlDatabase.getMPDDTooltip(providerName, months);

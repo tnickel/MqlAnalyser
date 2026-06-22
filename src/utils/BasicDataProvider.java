@@ -101,6 +101,7 @@ public class BasicDataProvider {
         }
         
         String balanceStr = data.getOrDefault("Balance", "0,00")
+                               .replace(".", "")
                                .replace(",", ".")
                                .replace(" ", "");
         try {
