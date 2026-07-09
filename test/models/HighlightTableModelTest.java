@@ -62,12 +62,12 @@ public class HighlightTableModelTest {
 
     @Test
     public void testColumnNamesAndCount() {
-        assertEquals(33, model.getColumnCount());
+        assertEquals(35, model.getColumnCount());
         String[] expectedColumnNames = {
             "No.", "Signal Provider", "Score", "Balance", "Subscribers", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
-            "3MProfProz", "Trades", "Trade Days", "Days", "Win Rate %", "Total Profit", 
+            "3MProfProz", "Trades", "Trade Days", "Pairs", "Days", "Win Rate %", "Total Profit", 
             "Avg Profit/Trade", "Max Drawdown %", "Equity Drawdown %", "Profit Factor", 
-            "MaxTrades", "MaxLots", "Max Duration (h)", "Risiko", "Risk Score", "S/L", "T/P", 
+            "MaxTrades", "MaxLots", "Max Duration (h)", "Avg Duration (h)", "Risiko", "Risk Score", "S/L", "T/P", 
             "Start Date", "End Date", "Stabilitaet", "Steigung", "MaxDDGraphic", "EquityDrawdown3M%", "M/G"
         };
         for (int i = 0; i < expectedColumnNames.length; i++) {
@@ -77,21 +77,21 @@ public class HighlightTableModelTest {
 
     @TestFactory
     public Stream<DynamicTest> testColumnClasses() {
-        // Generate dynamic tests for all 33 columns to verify their assigned classes
+        // Generate dynamic tests for all 35 columns to verify their assigned classes
         Map<Integer, Class<?>> expectedClasses = new HashMap<>();
         // Integers
-        int[] integerCols = {0, 4, 10, 11, 12, 19, 21, 23, 24, 25};
+        int[] integerCols = {0, 4, 10, 11, 12, 13, 20, 22, 25, 26, 27};
         for (int col : integerCols) {
             expectedClasses.put(col, Integer.class);
         }
         // Doubles
-        int[] doubleCols = {2, 3, 5, 6, 7, 8, 9, 13, 14, 15, 16, 17, 18, 20, 28, 29, 30, 31};
+        int[] doubleCols = {2, 3, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19, 21, 23, 30, 31, 32, 33};
         for (int col : doubleCols) {
             expectedClasses.put(col, Double.class);
         }
 
         List<DynamicTest> tests = new ArrayList<>();
-        for (int i = 0; i < 33; i++) {
+        for (int i = 0; i < 35; i++) {
             final int colIndex = i;
             final Class<?> expectedClass = expectedClasses.getOrDefault(colIndex, String.class);
             tests.add(DynamicTest.dynamicTest("Column Class Test - Index " + colIndex + " (" + model.getColumnName(colIndex) + ")", () -> {

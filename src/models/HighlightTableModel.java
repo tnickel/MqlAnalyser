@@ -19,9 +19,9 @@ public class HighlightTableModel extends DefaultTableModel {
   
 	private static final String[] COLUMN_NAMES = {
 		    "No.", "Signal Provider", "Score", "Balance", "Subscribers", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
-		    "3MProfProz", "Trades", "Trade Days", "Days", "Win Rate %", "Total Profit", 
+		    "3MProfProz", "Trades", "Trade Days", "Pairs", "Days", "Win Rate %", "Total Profit", 
 		    "Avg Profit/Trade", "Max Drawdown %", "Equity Drawdown %", "Profit Factor", 
-		    "MaxTrades", "MaxLots", "Max Duration (h)", "Risiko", "Risk Score", "S/L", "T/P", 
+		    "MaxTrades", "MaxLots", "Max Duration (h)", "Avg Duration (h)", "Risiko", "Risk Score", "S/L", "T/P", 
 		    "Start Date", "End Date", "Stabilitaet", "Steigung", "MaxDDGraphic", "EquityDrawdown3M%", "M/G"
 		};
 
@@ -97,12 +97,13 @@ public class HighlightTableModel extends DefaultTableModel {
           case 4:  // Subscribers
           case 10: // Trades
           case 11: // Trade Days
-          case 12: // Days
-          case 19: // MaxTrades
-          case 21: // Max Duration
-          case 23: // Risk Score
-          case 24: // S/L
-          case 25: // T/P
+          case 12: // Pairs
+          case 13: // Days
+          case 20: // MaxTrades
+          case 22: // Max Duration
+          case 25: // Risk Score
+          case 26: // S/L
+          case 27: // T/P
               return Integer.class;
           case 2:  // Score
           case 3:  // Balance
@@ -111,17 +112,18 @@ public class HighlightTableModel extends DefaultTableModel {
           case 7:  // 9MPDD
           case 8:  // 12MPDD
           case 9:  // 3MProfProz
-          case 13: // Win Rate
-          case 14: // Total Profit
-          case 15: // Avg Profit/Trade
-          case 16: // Max Drawdown
-          case 17: // Equity Drawdown
-          case 18: // Profit Factor
-          case 20: // MaxLots
-          case 28: // Stabilität
-          case 29: // Steigung
-          case 30: // MaxDDGraphic
-          case 31: // EquityDrawdown3M%
+          case 14: // Win Rate
+          case 15: // Total Profit
+          case 16: // Avg Profit/Trade
+          case 17: // Max Drawdown
+          case 18: // Equity Drawdown
+          case 19: // Profit Factor
+          case 21: // MaxLots
+          case 23: // Avg Duration
+          case 30: // Stabilität
+          case 31: // Steigung
+          case 32: // MaxDDGraphic
+          case 33: // EquityDrawdown3M%
               return Double.class;
           default:
               return String.class;
@@ -396,6 +398,7 @@ public class HighlightTableModel extends DefaultTableModel {
 	            threeMonthProfit,
 	            stats.getTrades().size(),
 	            stats.getTradeDays(),
+	            stats.getPairsCount(),
 	            daysBetween,
 	            stats.getWinRate(),
 	            stats.getTotalProfit(),
@@ -406,6 +409,7 @@ public class HighlightTableModel extends DefaultTableModel {
 	            stats.getMaxConcurrentTrades(),
 	            stats.getMaxConcurrentLots(),
 	            stats.getMaxDuration(),
+	            Math.round(stats.getAverageDuration() * 100.0) / 100.0,
 	            riskCategory == 0 ? "-" : String.valueOf(riskCategory), // Risiko als String mit "-" für 0
 	            riskScore,
 	            stats.hasStopLoss() ? 1 : 0,
@@ -547,6 +551,7 @@ public class HighlightTableModel extends DefaultTableModel {
 	        threeMonthProfit,
 	        stats.getTrades().size(),
 	        stats.getTradeDays(),
+	        stats.getPairsCount(),
 	        daysBetween,
 	        stats.getWinRate(),
 	        stats.getTotalProfit(),
@@ -557,6 +562,7 @@ public class HighlightTableModel extends DefaultTableModel {
 	        stats.getMaxConcurrentTrades(),
 	        stats.getMaxConcurrentLots(),
 	        stats.getMaxDuration(),
+	        Math.round(stats.getAverageDuration() * 100.0) / 100.0,
 	        riskCategory == 0 ? "-" : String.valueOf(riskCategory), // Risiko als String mit "-" für 0
 	        riskScore,
 	        stats.hasStopLoss() ? 1 : 0,

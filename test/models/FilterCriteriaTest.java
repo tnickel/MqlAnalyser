@@ -128,7 +128,7 @@ public class FilterCriteriaTest {
     public void testAddFilterIgnoresMaxDrawdownColumn16() {
         FilterCriteria criteria = new FilterCriteria();
         FilterRange range = new FilterRange(0.0, 15.0);
-        criteria.addFilter(16, range);
+        criteria.addFilter(17, range);
         
         assertTrue(criteria.getFilters().isEmpty());
     }
@@ -138,12 +138,12 @@ public class FilterCriteriaTest {
         FilterCriteria criteria = new FilterCriteria();
         Map<Integer, FilterRange> filters = new HashMap<>();
         filters.put(3, new FilterRange(10.0, null));
-        filters.put(16, new FilterRange(0.0, 15.0));
+        filters.put(17, new FilterRange(0.0, 15.0));
         
         criteria.setFilters(filters);
         
         assertEquals(1, criteria.getFilters().size());
-        assertNull(criteria.getFilters().get(16));
+        assertNull(criteria.getFilters().get(17));
         assertNotNull(criteria.getFilters().get(3));
     }
 
@@ -204,8 +204,8 @@ public class FilterCriteriaTest {
     @Test
     public void testSpecialRiskCategoryFiltering() {
         FilterCriteria criteria = new FilterCriteria();
-        // Column 22 is "Risiko" in HighlightTableModel
-        criteria.addFilter(22, new FilterRange(1.0, 3.0)); // Min risk 1, max risk 3
+        // Column 24 is "Risiko" in HighlightTableModel
+        criteria.addFilter(24, new FilterRange(1.0, 3.0)); // Min risk 1, max risk 3
         
         ProviderStats stats = new ProviderStats();
         stats.setSignalProviderInfo("TestProvider", "");
@@ -214,8 +214,8 @@ public class FilterCriteriaTest {
         // Let's verify stats.getRiskCategory()
         stats.setRiskCategory(2); // Medium risk
         
-        Object[] rowData = new Object[23];
-        rowData[22] = "Low/Medium"; // String representation in rowData
+        Object[] rowData = new Object[25];
+        rowData[24] = "Low/Medium"; // String representation in rowData
         
         assertTrue(criteria.matches(stats, rowData));
         
@@ -358,7 +358,7 @@ public class FilterCriteriaTest {
             ));
         }
 
-        // --- PART 3: Risk Category (Column 22) Matching (10+ test cases) ---
+        // --- PART 3: Risk Category (Column 24) Matching (10+ test cases) ---
         int[] riskStatsValues = {0, 1, 3, 5, 8, 10};
         Double[] riskMinFilters = {0.0, 2.0, 5.0, null};
         Double[] riskMaxFilters = {4.0, 8.0, 10.0, null};
@@ -374,14 +374,14 @@ public class FilterCriteriaTest {
                         String.format("RiskColumnMatch #%d: riskVal=%d, min=%s, max=%s", count++, fRisk, fMin, fMax),
                         () -> {
                             FilterCriteria criteria = new FilterCriteria();
-                            criteria.addFilter(22, new FilterRange(fMin, fMax));
+                            criteria.addFilter(24, new FilterRange(fMin, fMax));
                             
                             ProviderStats stats = new ProviderStats();
                             stats.setSignalProviderInfo("RiskProvider", "");
                             stats.setRiskCategory(fRisk);
                             
-                            Object[] rowData = new Object[23];
-                            rowData[22] = "Some String"; 
+                            Object[] rowData = new Object[25];
+                            rowData[24] = "Some String"; 
                             
                             boolean expected = true;
                             if (fMin != null && fRisk < fMin) expected = false;
@@ -394,24 +394,24 @@ public class FilterCriteriaTest {
             }
         }
 
-        // --- PART 4: Ignore Max Drawdown (Column 16) Constraints ---
-        tests.add(DynamicTest.dynamicTest("Ignore Column 16 on addFilter", () -> {
+        // --- PART 4: Ignore Max Drawdown (Column 17) Constraints ---
+        tests.add(DynamicTest.dynamicTest("Ignore Column 17 on addFilter", () -> {
             FilterCriteria criteria = new FilterCriteria();
-            criteria.addFilter(16, new FilterRange(0.0, 10.0));
+            criteria.addFilter(17, new FilterRange(0.0, 10.0));
             assertTrue(criteria.getFilters().isEmpty());
         }));
         
-        tests.add(DynamicTest.dynamicTest("Ignore Column 16 on setFilters", () -> {
+        tests.add(DynamicTest.dynamicTest("Ignore Column 17 on setFilters", () -> {
             FilterCriteria criteria = new FilterCriteria();
             Map<Integer, FilterRange> map = new HashMap<>();
-            map.put(16, new FilterRange(0.0, 10.0));
+            map.put(17, new FilterRange(0.0, 10.0));
             map.put(3, new FilterRange(5.0, null));
             criteria.setFilters(map);
             assertEquals(1, criteria.getFilters().size());
-            assertNull(criteria.getFilters().get(16));
+            assertNull(criteria.getFilters().get(17));
         }));
 
-        tests.add(DynamicTest.dynamicTest("Ignore Column 16 on save and load roundtrip", () -> {
+        tests.add(DynamicTest.dynamicTest("Ignore Column 17 on save and load roundtrip", () -> {
             FilterCriteria criteria = new FilterCriteria();
             criteria.addFilter(3, new FilterRange(1.0, 2.0));
             
@@ -419,14 +419,14 @@ public class FilterCriteriaTest {
             field.setAccessible(true);
             @SuppressWarnings("unchecked")
             Map<Integer, FilterRange> columnFilters = (Map<Integer, FilterRange>) field.get(criteria);
-            columnFilters.put(16, new FilterRange(0.0, 10.0)); 
+            columnFilters.put(17, new FilterRange(0.0, 10.0)); 
             
             criteria.saveFilters();
             
             FilterCriteria loaded = new FilterCriteria();
             loaded.loadFilters();
             
-            assertFalse(loaded.getFilters().containsKey(16));
+            assertFalse(loaded.getFilters().containsKey(17));
             assertTrue(loaded.getFilters().containsKey(3));
         }));
 

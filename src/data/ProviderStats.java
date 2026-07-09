@@ -241,6 +241,22 @@ public class ProviderStats {
             .orElse(0);
     }
     
+    public double getAverageDuration() {
+        if (trades.isEmpty()) return 0.0;
+        return trades.stream()
+            .mapToDouble(trade -> 
+                java.time.Duration.between(trade.getOpenTime(), trade.getCloseTime()).getSeconds() / 3600.0)
+            .average()
+            .orElse(0.0);
+    }
+    
+    public int getPairsCount() {
+        return (int) trades.stream()
+            .map(Trade::getSymbol)
+            .distinct()
+            .count();
+    }
+    
     public double getMaxProfit() {
         return profits.stream()
             .mapToDouble(Double::doubleValue)

@@ -36,9 +36,9 @@ public class FilterDialog extends JDialog {
     
     private static final String[] TABLE_COLUMNS = {
         "No.", "Signal Provider", "Score", "Balance", "Subscribers", "3MPDD", "6MPDD", "9MPDD", "12MPDD", 
-        "3MProfProz", "Trades", "Trade Days", "Days", "Win Rate %", "Total Profit", 
+        "3MProfProz", "Trades", "Trade Days", "Pairs", "Days", "Win Rate %", "Total Profit", 
         "Avg Profit/Trade", "Max Drawdown %", "Equity Drawdown %", "Profit Factor", 
-        "MaxTrades", "MaxLots", "Max Duration (h)", "Risiko", "Risk Score", "S/L", "T/P", 
+        "MaxTrades", "MaxLots", "Max Duration (h)", "Avg Duration (h)", "Risiko", "Risk Score", "S/L", "T/P", 
         "Start Date", "End Date", "Stabilitaet", "Steigung", "MaxDDGraphic", "EquityDrawdown3M%", "M/G"
     };
 

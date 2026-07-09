@@ -109,20 +109,20 @@ public class TableColumnManagerTest {
         assertTrue(manager.isColumnVisible(1));
         assertTrue(manager.isColumnVisible(2));
         
-        // Max Drawdown % (Index 16) must always be hidden
-        assertFalse(manager.isColumnVisible(16));
+        // Max Drawdown % (Index 17) must always be hidden
+        assertFalse(manager.isColumnVisible(17));
         
         // Check other standard visible columns
-        // isStandardVisible logic: (i <= 2) || (i == 4) || (i == 5) || (i == 6) || (i == 10) || (i == 13) || (i == 17) || (i == 22) || (i == 23) || (i == 32)
+        // isStandardVisible logic: (i <= 2) || (i == 4) || (i == 5) || (i == 6) || (i == 10) || (i == 14) || (i == 18) || (i == 24) || (i == 25) || (i == 34)
         assertTrue(manager.isColumnVisible(4));
         assertTrue(manager.isColumnVisible(5));
         assertTrue(manager.isColumnVisible(6));
         assertTrue(manager.isColumnVisible(10));
-        assertTrue(manager.isColumnVisible(13));
-        assertTrue(manager.isColumnVisible(17));
-        assertTrue(manager.isColumnVisible(22));
-        assertTrue(manager.isColumnVisible(23));
-        assertTrue(manager.isColumnVisible(32));
+        assertTrue(manager.isColumnVisible(14));
+        assertTrue(manager.isColumnVisible(18));
+        assertTrue(manager.isColumnVisible(24));
+        assertTrue(manager.isColumnVisible(25));
+        assertTrue(manager.isColumnVisible(34));
         
         // Column 3 is not in standard visible list, should be hidden by default
         assertFalse(manager.isColumnVisible(3));
@@ -136,10 +136,10 @@ public class TableColumnManagerTest {
         assertTrue(manager.isColumnVisible(0));
         assertTrue(manager.isColumnVisible(1));
         
-        // Max Drawdown % (index 16) can never be made visible
-        manager.setColumnVisible(16, false); // Explicitly hide it first
-        manager.setColumnVisible(16, true);  // Try to show it
-        assertFalse(manager.isColumnVisible(16)); // Verify it remains hidden
+        // Max Drawdown % (index 17) can never be made visible
+        manager.setColumnVisible(17, false); // Explicitly hide it first
+        manager.setColumnVisible(17, true);  // Try to show it
+        assertFalse(manager.isColumnVisible(17)); // Verify it remains hidden
     }
 
     @Test
@@ -181,7 +181,7 @@ public class TableColumnManagerTest {
         manager.setColumnVisible(3, true); // Balance
         manager.setColumnVisible(5, false); // 3MPDD
         manager.setColumnVisible(10, false); // Trades
-        manager.setColumnVisible(28, true); // Stabilität
+        manager.setColumnVisible(30, true); // Stabilität (now index 30)
         
         manager.saveColumnSettings();
         
@@ -203,12 +203,12 @@ public class TableColumnManagerTest {
         assertTrue(manager.isColumnVisible(3));
         assertFalse(manager.isColumnVisible(5));
         assertFalse(manager.isColumnVisible(10));
-        assertTrue(manager.isColumnVisible(28));
+        assertTrue(manager.isColumnVisible(30));
         
         // Constraints must still hold
         assertTrue(manager.isColumnVisible(0));
         assertTrue(manager.isColumnVisible(1));
-        assertFalse(manager.isColumnVisible(16));
+        assertFalse(manager.isColumnVisible(17));
     }
 
     @Test
@@ -226,7 +226,7 @@ public class TableColumnManagerTest {
         assertTrue(manager.isColumnVisible(0));
         assertTrue(manager.isColumnVisible(1));
         assertTrue(manager.isColumnVisible(2));
-        assertFalse(manager.isColumnVisible(16));
+        assertFalse(manager.isColumnVisible(17));
     }
 
     @TestFactory
@@ -238,16 +238,16 @@ public class TableColumnManagerTest {
         for (int run = 1; run <= 200; run++) {
             final int runIndex = run;
             final Properties testProps = new Properties();
-            final boolean[] expectedVisibility = new boolean[33];
+            final boolean[] expectedVisibility = new boolean[35];
             
-            for (int col = 0; col < 33; col++) {
+            for (int col = 0; col < 35; col++) {
                 boolean visible = random.nextBoolean();
                 testProps.setProperty("column_visible_" + col, String.valueOf(visible));
                 
                 // Work out expected visibility after manager applies restrictions
                 if (col <= 1) {
                     expectedVisibility[col] = true; // First two columns always visible
-                } else if (col == 16) {
+                } else if (col == 17) {
                     expectedVisibility[col] = false; // Max Drawdown % always hidden
                 } else {
                     expectedVisibility[col] = visible;
@@ -272,7 +272,7 @@ public class TableColumnManagerTest {
                 testManager.loadColumnVisibilitySettings();
                 
                 // Verify all column visibilities
-                for (int col = 0; col < 33; col++) {
+                for (int col = 0; col < 35; col++) {
                     assertEquals(
                         expectedVisibility[col], 
                         testManager.isColumnVisible(col), 

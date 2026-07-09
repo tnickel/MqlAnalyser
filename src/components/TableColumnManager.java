@@ -112,7 +112,7 @@ public class TableColumnManager {
             }
             
             boolean isStandardVisible = (i <= 2) || (i == 4) || (i == 5) || (i == 6) || 
-                                       (i == 10) || (i == 13) || (i == 17) || (i == 22) || (i == 23) || (i == 32);
+                                       (i == 10) || (i == 14) || (i == 18) || (i == 24) || (i == 25) || (i == 34);
             
             if (!isStandardVisible) {
                 // Spalte verstecken

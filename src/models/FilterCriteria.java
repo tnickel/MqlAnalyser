@@ -46,8 +46,8 @@ public class FilterCriteria implements Serializable
     
     public void addFilter(int column, FilterRange range)
     {
-        // Ignoriere den Filter für MaxDrawdown (column 16)
-        if (column != 16) {
+        // Ignoriere den Filter für MaxDrawdown (column 17)
+        if (column != 17) {
             columnFilters.put(column, range);
         }
     }
@@ -68,8 +68,8 @@ public class FilterCriteria implements Serializable
             int column = entry.getKey();
             FilterRange range = entry.getValue();
             
-            // Ignoriere den MaxDrawdown-Filter (column 16)
-            if (column == 16) {
+            // Ignoriere den MaxDrawdown-Filter (column 17)
+            if (column == 17) {
                 continue;
             }
             
@@ -79,8 +79,8 @@ public class FilterCriteria implements Serializable
                 continue;
             }
             
-            // Spezielle Behandlung für Risiko-Spalte (Index 22)
-            if (column == 22) {
+            // Spezielle Behandlung für Risiko-Spalte (Index 24)
+            if (column == 24) {
                 // Risiko-Wert aus ProviderStats holen, da in der Tabelle als String dargestellt
                 int riskValue = stats.getRiskCategory();
                 if (!range.matches(riskValue)) {
@@ -141,7 +141,7 @@ public class FilterCriteria implements Serializable
     public Map<Integer, FilterRange> getFilters()
     {
         // Entferne den MaxDrawdown-Filter, falls er versehentlich enthalten ist
-        columnFilters.remove(16);
+        columnFilters.remove(17);
         return columnFilters;
     }
     
@@ -149,7 +149,7 @@ public class FilterCriteria implements Serializable
     {
         this.columnFilters = new HashMap<>(filters);
         // Entferne den MaxDrawdown-Filter, falls er enthalten ist
-        this.columnFilters.remove(16);
+        this.columnFilters.remove(17);
     }
     
     public void saveFilters()
@@ -158,7 +158,7 @@ public class FilterCriteria implements Serializable
         {
             // Entferne den MaxDrawdown-Filter vor dem Speichern
             Map<Integer, FilterRange> filtersToSave = new HashMap<>(columnFilters);
-            filtersToSave.remove(16);
+            filtersToSave.remove(17);
             
             // Speichere Spaltenfilter
             oos.writeObject(filtersToSave);
@@ -183,7 +183,7 @@ public class FilterCriteria implements Serializable
             columnFilters = (Map<Integer, FilterRange>) ois.readObject();
             
             // Entferne den MaxDrawdown-Filter, falls er enthalten ist
-            columnFilters.remove(16);
+            columnFilters.remove(17);
             
             // Lade Währungspaar-Filter
             try {

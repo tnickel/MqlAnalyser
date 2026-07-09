@@ -52,4 +52,37 @@ public class TradeTest {
         assertTrue(str.contains("EURUSD"));
         assertTrue(str.contains("Buy"));
     }
+
+    @Test
+    public void testProviderStatsAverageDuration() {
+        ProviderStats stats = new ProviderStats();
+        
+        // Test empty trades average duration is 0
+        assertEquals(0.0, stats.getAverageDuration(), 0.001);
+        
+        LocalDateTime now = LocalDateTime.now();
+        // Trade 1: 1 hour duration
+        stats.addTrade(now, now.plusHours(1), "Buy", "EURUSD", 0.1, 1.10, 1.11, 0, 0, 0, 0, 10.0);
+        // Trade 2: 2.5 hours duration
+        stats.addTrade(now, now.plusMinutes(150), "Buy", "EURUSD", 0.1, 1.10, 1.11, 0, 0, 0, 0, 20.0);
+        
+        // Total duration = 1.0 + 2.5 = 3.5 hours. Average = 3.5 / 2 = 1.75 hours.
+        assertEquals(1.75, stats.getAverageDuration(), 0.001);
+    }
+
+    @Test
+    public void testProviderStatsPairsCount() {
+        ProviderStats stats = new ProviderStats();
+        
+        // Empty trades has 0 pairs
+        assertEquals(0, stats.getPairsCount());
+        
+        LocalDateTime now = LocalDateTime.now();
+        stats.addTrade(now, now.plusHours(1), "Buy", "EURUSD", 0.1, 1.10, 1.11, 0, 0, 0, 0, 10.0);
+        stats.addTrade(now, now.plusHours(1), "Buy", "GBPUSD", 0.1, 1.10, 1.11, 0, 0, 0, 0, 20.0);
+        stats.addTrade(now, now.plusHours(1), "Buy", "EURUSD", 0.1, 1.10, 1.11, 0, 0, 0, 0, 30.0);
+        
+        // Distinct pairs: EURUSD, GBPUSD -> 2 pairs
+        assertEquals(2, stats.getPairsCount());
+    }
 }
